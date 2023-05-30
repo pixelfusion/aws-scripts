@@ -2,9 +2,7 @@
   "name": "@pixelfusion/aws-scripts",
   "version": "0.0.1",
   "description": "AWS CDK scripts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/pixelfusion/aws-scripts.git"
@@ -14,7 +12,6 @@
     "cdk",
     "scripts"
   ],
-  "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./acm": "./src/acm.ts",
@@ -26,6 +23,7 @@
     "./rds": "./src/rds.ts",
     "./s3": "./src/s3.ts"
   },
+  "main": "./src/index.ts",
   "author": "Pixelfusion",
   "license": "ISC",
   "private": true,
