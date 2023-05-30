@@ -20,8 +20,12 @@ export class PostgresInstance extends cdk.Stack {
     // Postgres instance
     stack: StackConfig,
     vpc: ec2.IVpc,
+    options?: {
+      version?: rds.PostgresEngineVersion
+    }
   ) {
     super(scope, id, props);
+    const version = options?.version || rds.PostgresEngineVersion.VER_15_2;
 
     // Create postgres database secret
     const databaseCredentialsSecret = new ssm.Secret(this, stack.getResourceID('RdsCredentials'), {
@@ -48,7 +52,7 @@ export class PostgresInstance extends cdk.Stack {
     // create postgres database
     const rdsInstanceId = `${ stack.getFullResourceId('RdsInstance') }`;
     this.rdsInstance = new rds.DatabaseInstance(this, rdsInstanceId, {
-      engine: rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_14_7 }),
+      engine: rds.DatabaseInstanceEngine.postgres({ version }),
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       vpc: vpc,
       databaseName: 'website',
