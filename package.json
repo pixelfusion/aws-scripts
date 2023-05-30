@@ -16,14 +16,7 @@
     "scripts"
   ],
   "exports": {
-    "./acm": "./src/acm",
-    "./configuration": "./configuration",
-    "./ecr-repository": "./ecr-repository",
-    "./fargate": "./fargate",
-    "./github": "./github",
-    "./helper": "./helper",
-    "./rds": "./rds",
-    "./s3": "./s3"
+    "./*": "./src/*.ts"
   },
   "author": "Pixelfusion",
   "license": "ISC",
