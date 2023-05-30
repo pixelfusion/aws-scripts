@@ -2,7 +2,6 @@
   "name": "@pixelfusion/aws-scripts",
   "version": "0.0.1",
   "description": "AWS CDK scripts",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,7 +14,9 @@
     "cdk",
     "scripts"
   ],
+  "main": "./src/index.ts",
   "exports": {
+    ".": "./src/index.ts",
     "./*": "./src/*.ts"
   },
   "author": "Pixelfusion",
