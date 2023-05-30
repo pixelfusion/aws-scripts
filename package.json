@@ -17,7 +17,14 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./acm": "./src/acm.ts",
+    "./configuration": "./src/configuration.ts",
+    "./ecr-repository": "./src/ecr-repository.ts",
+    "./fargate": "./src/fargate.ts",
+    "./github": "./src/github.ts",
+    "./helper": "./src/helper.ts",
+    "./rds": "./src/rds.ts",
+    "./s3": "./src/s3.ts"
   },
   "author": "Pixelfusion",
   "license": "ISC",
