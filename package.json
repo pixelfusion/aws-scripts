@@ -15,6 +15,16 @@
     "cdk",
     "scripts"
   ],
+  "exports": {
+    "./acm": "./src/acm",
+    "./configuration": "./configuration",
+    "./ecr-repository": "./ecr-repository",
+    "./fargate": "./fargate",
+    "./github": "./github",
+    "./helper": "./helper",
+    "./rds": "./rds",
+    "./s3": "./s3"
+  },
   "author": "Pixelfusion",
   "license": "ISC",
   "private": true,
