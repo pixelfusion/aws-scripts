@@ -40,13 +40,13 @@ export class FargateService extends cdk.NestedStack {
     props: NestedStackProps<{
       subDomainWithoutDot?: string,
       healthCheckPath?: string,
+      imageVersion?: string,
     }>,
     stack: StackConfig,
     cluster: ecs.ICluster,
     certificate: acm.ICertificate,
     zone: route53.IHostedZone,
     repository: ecr.IRepository,
-    version: string,
     taskConfiguration: TaskConfiguration,
   ) {
     super(scope, id, props);
@@ -61,6 +61,12 @@ export class FargateService extends cdk.NestedStack {
       type: 'String',
       description: 'Path to health check url',
       default: '/health-check',
+    })
+
+    const imageVersion = new cdk.CfnParameter(this, 'imageVersion', {
+      type: 'String',
+      description: 'Docker image version to use',
+      default: 'latest',
     })
 
     // Compile secrets into list of mapped ecs.Secrets
@@ -88,7 +94,7 @@ export class FargateService extends cdk.NestedStack {
       cpu: taskConfiguration?.cpu || 256,
       desiredCount: taskConfiguration?.desiredCount || 1,
       taskImageOptions: {
-        image: ecs.ContainerImage.fromEcrRepository(repository, version),
+        image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion.valueAsString),
         environment: taskConfiguration?.environment || {},
         secrets,
       },
