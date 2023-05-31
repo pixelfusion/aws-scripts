@@ -29,7 +29,7 @@ const ecr = __importStar(require("aws-cdk-lib/aws-ecr"));
 /**
  * Creates an ECR repository for uploading docker images to
  */
-class EcrRepositoryStack extends cdk.Stack {
+class EcrRepositoryStack extends cdk.NestedStack {
     constructor(scope, id, props, stack, service) {
         super(scope, id, props);
         // Create an ECR repositories

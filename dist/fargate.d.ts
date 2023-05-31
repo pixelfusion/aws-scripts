@@ -5,7 +5,7 @@ import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
-import { StackConfig } from './configuration';
+import { NestedStackProps, StackConfig } from './configuration';
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
@@ -24,10 +24,10 @@ export type EnvFactory = (stage: StackConfig, defaults: Record<string, string>) 
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
  */
-export declare class FargateService extends cdk.Stack {
+export declare class FargateService extends cdk.NestedStack {
     readonly service: ecs_patterns.ApplicationLoadBalancedFargateService;
-    constructor(scope: Construct, id: string, props: cdk.StackProps, stack: StackConfig, cluster: ecs.ICluster, certificate: acm.ICertificate, zone: route53.IHostedZone, repository: ecr.IRepository, version: string, taskConfiguration: TaskConfiguration, options?: {
+    constructor(scope: Construct, id: string, props: NestedStackProps<{
         subDomainWithoutDot?: string;
         healthCheckPath?: string;
-    });
+    }>, stack: StackConfig, cluster: ecs.ICluster, certificate: acm.ICertificate, zone: route53.IHostedZone, repository: ecr.IRepository, version: string, taskConfiguration: TaskConfiguration);
 }

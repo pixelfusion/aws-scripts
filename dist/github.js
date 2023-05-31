@@ -29,7 +29,7 @@ const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 /**
  * Stack to generate a GitHub deployer, along with key and secret for loading into GitHub secrets
  */
-class GithubDeployStack extends cdk.Stack {
+class GithubDeployStack extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
         // Create IAM user
