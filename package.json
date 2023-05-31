@@ -2,7 +2,10 @@
   "name": "@pixelfusion/aws-scripts",
   "version": "0.0.1",
   "description": "AWS CDK scripts",
-  "scripts": {},
+  "scripts": {
+    "build": "tsc && npm run build:webpack",
+    "build:webpack": "webpack --config webpack.config.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/pixelfusion/aws-scripts.git"
@@ -12,25 +15,18 @@
     "cdk",
     "scripts"
   ],
-  "exports": {
-    ".": "./src/index.ts",
-    "./acm": "./src/acm.ts",
-    "./configuration": "./src/configuration.ts",
-    "./ecr-repository": "./src/ecr-repository.ts",
-    "./fargate": "./src/fargate.ts",
-    "./github": "./src/github.ts",
-    "./helper": "./src/helper.ts",
-    "./rds": "./src/rds.ts",
-    "./s3": "./src/s3.ts"
-  },
-  "main": "./src/index.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "author": "Pixelfusion",
   "license": "ISC",
   "private": true,
   "devDependencies": {
     "@types/jest": "^29.4.0",
     "jest": "^29.5.0",
-    "ts-jest": "^29.0.5"
+    "ts-jest": "^29.0.5",
+    "ts-loader": "^9.4.3",
+    "webpack": "^5.84.1",
+    "webpack-cli": "^5.1.1"
   },
   "dependencies": {
     "@types/node": "18.14.6",

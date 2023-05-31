@@ -1,6 +1,10 @@
 default: help
 nvm:
 	. ${NVM_DIR}/nvm.sh && nvm use && $(CMD)
+clean:
+	rm -rf dist
+build: clean ## Build a production build
+	make nvm CMD="npm run build"
 install: ## Install all CDK dependencies
 	make nvm CMD="npm install"
 help: ## Display a list of commands
