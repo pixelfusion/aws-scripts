@@ -1,36 +1,20 @@
 {
-  "$": "Config file for ts-node",
-  "ts-node": {
-    "preferTsExts": true
-  },
   "compilerOptions": {
-    "alwaysStrict": true,
-    "experimentalDecorators": true,
-    "incremental": true,
+    "target": "es2020",
+    "module": "commonjs",
     "lib": [
-      "es2020",
+      "es6",
       "dom"
     ],
     "declaration": true,
-    "module": "CommonJS",
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
+    "outDir": "dist",
     "strict": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "stripInternal": false,
-    "target": "ES2020",
-    "composite": false,
-    "tsBuildInfoFile": "tsconfig.dev.tsbuildinfo"
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "**/*.ts"
+    "src"
   ],
   "exclude": [
     "node_modules"
