@@ -6,7 +6,7 @@ import { StackConfig } from "./configuration";
 /**
  * Generates an ACMS certificate
  */
-export declare class Certificate extends cdk.Stack {
+export declare class Certificate extends cdk.NestedStack {
     readonly certificate: acm.Certificate;
-    constructor(scope: Construct, id: string, props: cdk.StackProps, stack: StackConfig, zone: route53.IHostedZone);
+    constructor(scope: Construct, id: string, props: cdk.NestedStackProps, stack: StackConfig, zone: route53.IHostedZone);
 }

@@ -29,7 +29,7 @@ const acm = __importStar(require("aws-cdk-lib/aws-certificatemanager"));
 /**
  * Generates an ACMS certificate
  */
-class Certificate extends cdk.Stack {
+class Certificate extends cdk.NestedStack {
     constructor(scope, id, props, stack, zone) {
         super(scope, id, props);
         // Create a certificate in ACM for the domain

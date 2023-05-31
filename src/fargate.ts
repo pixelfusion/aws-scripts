@@ -8,7 +8,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
-import { StackConfig } from './configuration';
+import { NestedStackProps, StackConfig } from './configuration';
 
 /**
  * Represents a definition for a task that can be used to generate a task definition
@@ -30,14 +30,17 @@ export type EnvFactory = (stage: StackConfig, defaults: Record<string, string>) 
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
  */
-export class FargateService extends cdk.Stack {
+export class FargateService extends cdk.NestedStack {
 
   public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService
 
   constructor(
     scope: Construct,
     id: string,
-    props: cdk.StackProps,
+    props: NestedStackProps<{
+      subDomainWithoutDot?: string,
+      healthCheckPath?: string,
+    }>,
     stack: StackConfig,
     cluster: ecs.ICluster,
     certificate: acm.ICertificate,
@@ -45,15 +48,20 @@ export class FargateService extends cdk.Stack {
     repository: ecr.IRepository,
     version: string,
     taskConfiguration: TaskConfiguration,
-    options?: {
-      subDomainWithoutDot?: string,
-      healthCheckPath?: string,
-    }
   ) {
     super(scope, id, props);
 
-    const subDomainWithoutDot = options?.subDomainWithoutDot ?? "";
-    const healthCheckPath = options?.healthCheckPath ?? '/health-check'
+    const subDomainWithoutDot = new cdk.CfnParameter(this, 'subDomainWithoutDot', {
+      type: 'String',
+      description: 'Subdomain to map to this service (including trailing dot if any)',
+      default: '',
+    });
+
+    const healthCheckPath = new cdk.CfnParameter(this, 'healthCheckPath', {
+      type: 'String',
+      description: 'Path to health check url',
+      default: '/health-check',
+    })
 
     // Compile secrets into list of mapped ecs.Secrets
     const secrets: { [key: string]: ecs.Secret } = {};
@@ -109,11 +117,17 @@ export class FargateService extends cdk.Stack {
     );
 
     // Health check
-    this.service.targetGroup.configureHealthCheck({ path: healthCheckPath });
+    this.service.targetGroup.configureHealthCheck({
+      path: healthCheckPath.valueAsString
+    });
 
     // create A recordset alias targeting admin service's load balancer
+    const recordName = cdk.Fn.join('', [
+      subDomainWithoutDot.valueAsString,
+      zone.zoneName
+    ])
     new route53.ARecord(this, stack.getResourceID('Recordset'), {
-      recordName: `${ subDomainWithoutDot }${ zone.zoneName }`,
+      recordName,
       zone,
       target: {
         aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)

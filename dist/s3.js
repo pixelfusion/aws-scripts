@@ -26,22 +26,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.S3Bucket = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const s3 = __importStar(require("aws-cdk-lib/aws-s3"));
-const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 /**
  * Generate an s3 bucket
  */
-class S3Bucket extends cdk.Stack {
-    constructor(scope, id, props, stack, options) {
+class S3Bucket extends cdk.NestedStack {
+    constructor(scope, id, props, stack) {
         super(scope, id, props);
-        // Check options
-        const bucketName = options?.bucketName;
-        const publicPath = options?.publicPath || '/*';
-        const bucketAccess = options?.bucketAccess || 'Private';
+        const bucketName = new cdk.CfnParameter(this, 'bucketName', {
+            type: 'String',
+            description: 'Name for this bucket',
+            default: '',
+        });
+        const publicPath = new cdk.CfnParameter(this, 'publicPath', {
+            type: 'String',
+            description: 'Public path',
+            default: '/*',
+        });
+        const bucketAccess = new cdk.CfnParameter(this, 'bucketAccess', {
+            type: 'String',
+            description: 'Access for this bucket',
+            allowedValues: ['Public', 'Private'],
+            default: 'Private',
+        });
         // Create base bucket
         this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
             publicReadAccess: false,
-            bucketName,
+            bucketName: bucketName.valueAsString,
             blockPublicAccess: {
                 blockPublicAcls: false,
                 blockPublicPolicy: false,
@@ -49,14 +60,26 @@ class S3Bucket extends cdk.Stack {
                 restrictPublicBuckets: false,
             },
         });
-        // Add public access
-        if (bucketAccess == 'Public') {
-            this.bucket.addToResourcePolicy(new iam.PolicyStatement({
-                actions: ['s3:GetObject'],
-                principals: [new iam.AnyPrincipal()],
-                resources: [this.bucket.arnForObjects(publicPath)],
-            }));
-        }
+        // Condition for public access
+        const bucketIsPublic = new cdk.CfnCondition(this, 'BucketIsPublicCondition', {
+            expression: cdk.Fn.conditionEquals(bucketAccess.valueAsString, 'Public')
+        });
+        // Conditionally add policy
+        const bucketPolicy = new s3.CfnBucketPolicy(this, 'BucketPolicy', {
+            bucket: this.bucket.bucketName,
+            policyDocument: {
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Principal: '*',
+                        Action: 's3:GetObject',
+                        Effect: 'Allow',
+                        Resource: this.bucket.arnForObjects(publicPath.valueAsString),
+                    }
+                ]
+            },
+        });
+        bucketPolicy.cfnOptions.condition = bucketIsPublic;
     }
 }
 exports.S3Bucket = S3Bucket;
