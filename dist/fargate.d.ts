@@ -29,5 +29,6 @@ export declare class FargateService extends cdk.NestedStack {
     constructor(scope: Construct, id: string, props: NestedStackProps<{
         subDomainWithoutDot?: string;
         healthCheckPath?: string;
-    }>, stack: StackConfig, cluster: ecs.ICluster, certificate: acm.ICertificate, zone: route53.IHostedZone, repository: ecr.IRepository, version: string, taskConfiguration: TaskConfiguration);
+        imageVersion?: string;
+    }>, stack: StackConfig, cluster: ecs.ICluster, certificate: acm.ICertificate, zone: route53.IHostedZone, repository: ecr.IRepository, taskConfiguration: TaskConfiguration);
 }

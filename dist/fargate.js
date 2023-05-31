@@ -36,7 +36,7 @@ const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
  * load balancer.
  */
 class FargateService extends cdk.NestedStack {
-    constructor(scope, id, props, stack, cluster, certificate, zone, repository, version, taskConfiguration) {
+    constructor(scope, id, props, stack, cluster, certificate, zone, repository, taskConfiguration) {
         super(scope, id, props);
         const subDomainWithoutDot = new cdk.CfnParameter(this, 'subDomainWithoutDot', {
             type: 'String',
@@ -47,6 +47,11 @@ class FargateService extends cdk.NestedStack {
             type: 'String',
             description: 'Path to health check url',
             default: '/health-check',
+        });
+        const imageVersion = new cdk.CfnParameter(this, 'imageVersion', {
+            type: 'String',
+            description: 'Docker image version to use',
+            default: 'latest',
         });
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
@@ -68,7 +73,7 @@ class FargateService extends cdk.NestedStack {
             cpu: taskConfiguration?.cpu || 256,
             desiredCount: taskConfiguration?.desiredCount || 1,
             taskImageOptions: {
-                image: ecs.ContainerImage.fromEcrRepository(repository, version),
+                image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion.valueAsString),
                 environment: taskConfiguration?.environment || {},
                 secrets,
             },
