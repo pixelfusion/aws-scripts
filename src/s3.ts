@@ -48,7 +48,7 @@ export class S3Bucket extends cdk.NestedStack {
 
     // Create base bucket
     this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
       publicReadAccess: false,
       bucketName: bucketName.valueAsString,
       blockPublicAccess: {
