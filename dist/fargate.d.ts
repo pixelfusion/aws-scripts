@@ -27,7 +27,7 @@ export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) 
 export declare class FargateService extends cdk.NestedStack {
     readonly service: ecs_patterns.ApplicationLoadBalancedFargateService;
     constructor(scope: Construct, id: string, props: NestedStackProps<{
-        subDomainWithoutDot?: string;
+        subDomain?: string;
         healthCheckPath?: string;
         imageVersion?: string;
     }>, stack: StackConfig, cluster: ecs.ICluster, certificate: acm.ICertificate, zone: route53.IHostedZone, repository: ecr.IRepository, taskConfiguration: TaskConfiguration);

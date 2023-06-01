@@ -96,8 +96,8 @@ class PostgresInstanceWithBastion extends PostgresInstance {
         super(scope, id, props, stack, vpc);
         const bastionSubdomain = new cdk.CfnParameter(this, 'bastionSubdomain', {
             type: 'String',
-            description: 'Subdomain including period for hostname',
-            default: 'ssh.',
+            description: 'Subdomain for hostname',
+            default: 'ssh',
         });
         // Create a security group for the bastion host
         const bastionSecurityGroup = new ec2.SecurityGroup(this, stack.getResourceID('BastionSecurityGroup'), {

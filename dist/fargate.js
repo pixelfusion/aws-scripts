@@ -38,9 +38,9 @@ const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props, stack, cluster, certificate, zone, repository, taskConfiguration) {
         super(scope, id, props);
-        const subDomainWithoutDot = new cdk.CfnParameter(this, 'subDomainWithoutDot', {
+        const subDomain = new cdk.CfnParameter(this, 'subDomain', {
             type: 'String',
-            description: 'Subdomain to map to this service (including trailing dot if any)',
+            description: 'Subdomain to map to this service',
             default: '',
         });
         const healthCheckPath = new cdk.CfnParameter(this, 'healthCheckPath', {
@@ -100,7 +100,7 @@ class FargateService extends cdk.NestedStack {
         });
         // create A recordset alias targeting admin service's load balancer
         new route53.ARecord(this, stack.getResourceID('Recordset'), {
-            recordName: subDomainWithoutDot.valueAsString,
+            recordName: subDomain.valueAsString,
             zone,
             target: {
                 aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
