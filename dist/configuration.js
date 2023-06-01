@@ -52,12 +52,28 @@ class StackConfig {
             return this.stack.name;
         };
         /**
+         * Get the stage
+         *
+         * @return {Stage}
+         */
+        this.getStage = () => {
+            return this.stage;
+        };
+        /**
          * Lookup name of stage
          *
          * @return {string} name of this stage
          */
         this.getStageName = () => {
             return this.stage.getStageName();
+        };
+        /**
+         * Lookup id of stage
+         *
+         * @return {string} id of this stage
+         */
+        this.getStageId = () => {
+            return this.stage.getId();
         };
         /**
          * Get a named property from this stack. Can be used for any specific

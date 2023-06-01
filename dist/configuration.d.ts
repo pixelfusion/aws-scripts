@@ -73,11 +73,23 @@ export declare class StackConfig {
      */
     getStackName: () => string;
     /**
+     * Get the stage
+     *
+     * @return {Stage}
+     */
+    getStage: () => Stage;
+    /**
      * Lookup name of stage
      *
      * @return {string} name of this stage
      */
     getStageName: () => string;
+    /**
+     * Lookup id of stage
+     *
+     * @return {string} id of this stage
+     */
+    getStageId: () => string;
     /**
      * Get a named property from this stack. Can be used for any specific
      * input parameter to configure a stack.
