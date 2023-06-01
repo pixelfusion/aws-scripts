@@ -150,10 +150,7 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
 
     // Create hostname for ssh. for bastion
     new route53.ARecord(this, stack.getResourceID('BastionRecordSet'), {
-      recordName: cdk.Fn.join('', [
-        bastionSubdomain.valueAsString,
-        zone.zoneName
-      ]),
+      recordName: bastionSubdomain.valueAsString,
       zone: zone,
       target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
     });

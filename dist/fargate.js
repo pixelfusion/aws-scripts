@@ -99,12 +99,8 @@ class FargateService extends cdk.NestedStack {
             path: healthCheckPath.valueAsString
         });
         // create A recordset alias targeting admin service's load balancer
-        const recordName = cdk.Fn.join('', [
-            subDomainWithoutDot.valueAsString,
-            zone.zoneName
-        ]);
         new route53.ARecord(this, stack.getResourceID('Recordset'), {
-            recordName,
+            recordName: subDomainWithoutDot.valueAsString,
             zone,
             target: {
                 aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
