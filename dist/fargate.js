@@ -98,9 +98,13 @@ class FargateService extends cdk.NestedStack {
         this.service.targetGroup.configureHealthCheck({
             path: healthCheckPath.valueAsString
         });
+        // Check if domain name given
+        const hasDomainName = new cdk.CfnCondition(this, 'HasDomainNameCondition', {
+            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, ''))
+        });
         // create A recordset alias targeting admin service's load balancer
         new route53.ARecord(this, stack.getResourceID('Recordset'), {
-            recordName: subDomain.valueAsString,
+            recordName: cdk.Fn.conditionIf(hasDomainName.logicalId, subDomain.valueAsString, cdk.Aws.NO_VALUE).toString(),
             zone,
             target: {
                 aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
