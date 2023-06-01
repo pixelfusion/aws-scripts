@@ -7,7 +7,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   release:
-    name: Prebuild setup and semantic release
+    name: Build and release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
