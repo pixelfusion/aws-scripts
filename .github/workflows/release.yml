@@ -28,7 +28,7 @@ jobs:
             git config user.name "${{ github.actor }}"
             git config user.email "${{ github.actor }}@users.noreply.github.com"
             git add dist
-            git commit -m "Build dist files for version ${{ env.VERSION }}"
+            git commit -m "Build dist files"
             git push
           fi
       - name: Tag semantic release
