@@ -30,7 +30,7 @@ export class S3Bucket extends cdk.NestedStack {
     const bucketName = new cdk.CfnParameter(this, 'bucketName', {
       type: 'String',
       description: 'Name for this bucket',
-      default: cdk.Aws.NO_VALUE
+      default: ''
     });
 
     const publicPath = new cdk.CfnParameter(this, 'publicPath', {
@@ -46,11 +46,25 @@ export class S3Bucket extends cdk.NestedStack {
       default: 'Private',
     });
 
+    const hasBucketName = new cdk.CfnCondition(
+      this,
+      'HasBucketNameCondition',
+      {
+        expression: cdk.Fn.conditionNot(
+          cdk.Fn.conditionEquals(bucketName.valueAsString, '')
+        )
+      }
+    )
+
     // Create base bucket
     this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       publicReadAccess: false,
-      bucketName: bucketName.valueAsString,
+      bucketName: cdk.Fn.conditionIf(
+        hasBucketName.logicalId,
+        bucketName.valueAsString,
+        cdk.Aws.NO_VALUE
+      ).toString(),
       blockPublicAccess: {
         blockPublicAcls: false,
         blockPublicPolicy: false,
