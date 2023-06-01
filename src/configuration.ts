@@ -101,12 +101,30 @@ export class StackConfig {
   }
 
   /**
+   * Get the stage
+   *
+   * @return {Stage}
+   */
+  getStage = (): Stage => {
+    return this.stage;
+  }
+
+  /**
    * Lookup name of stage
    *
    * @return {string} name of this stage
    */
   getStageName = (): string => {
     return this.stage.getStageName();
+  }
+
+  /**
+   * Lookup id of stage
+   *
+   * @return {string} id of this stage
+   */
+  getStageId = (): string => {
+    return this.stage.getId();
   }
 
   /**
