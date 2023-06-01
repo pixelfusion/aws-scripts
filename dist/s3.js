@@ -34,8 +34,7 @@ class S3Bucket extends cdk.NestedStack {
         super(scope, id, props);
         const bucketName = new cdk.CfnParameter(this, 'bucketName', {
             type: 'String',
-            description: 'Name for this bucket',
-            default: '',
+            description: 'Name for this bucket'
         });
         const publicPath = new cdk.CfnParameter(this, 'publicPath', {
             type: 'String',
