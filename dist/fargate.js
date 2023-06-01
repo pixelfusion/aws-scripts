@@ -102,14 +102,28 @@ class FargateService extends cdk.NestedStack {
         const hasDomainName = new cdk.CfnCondition(this, 'HasDomainNameCondition', {
             expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, ''))
         });
+        const isBaseDomain = new cdk.CfnCondition(this, 'IsBaseDomainCondition', {
+            expression: cdk.Fn.conditionEquals(subDomain.valueAsString, '')
+        });
         // create A recordset alias targeting admin service's load balancer
-        new route53.ARecord(this, stack.getResourceID('Recordset'), {
-            recordName: cdk.Fn.conditionIf(hasDomainName.logicalId, subDomain.valueAsString, cdk.Aws.NO_VALUE).toString(),
+        const recordWithSubdomain = new route53.ARecord(this, stack.getResourceID('RecordsetWithSubdomain'), {
+            recordName: subDomain.valueAsString,
             zone,
             target: {
                 aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
             }
         });
+        const cfnRecordWithSubdomain = recordWithSubdomain.node.defaultChild;
+        cfnRecordWithSubdomain.cfnOptions.condition = hasDomainName;
+        // Different parameters if it's a base record
+        const record = new route53.ARecord(this, stack.getResourceID('Recordset'), {
+            zone,
+            target: {
+                aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
+            }
+        });
+        const cfnRecord = record.node.defaultChild;
+        cfnRecord.cfnOptions.condition = isBaseDomain;
     }
 }
 exports.FargateService = FargateService;
