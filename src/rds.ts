@@ -104,8 +104,8 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
 
     const bastionSubdomain = new cdk.CfnParameter(this, 'bastionSubdomain', {
       type: 'String',
-      description: 'Subdomain including period for hostname',
-      default: 'ssh.',
+      description: 'Subdomain for hostname',
+      default: 'ssh',
     });
 
     // Create a security group for the bastion host

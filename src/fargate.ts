@@ -38,7 +38,7 @@ export class FargateService extends cdk.NestedStack {
     scope: Construct,
     id: string,
     props: NestedStackProps<{
-      subDomainWithoutDot?: string,
+      subDomain?: string,
       healthCheckPath?: string,
       imageVersion?: string,
     }>,
@@ -51,9 +51,9 @@ export class FargateService extends cdk.NestedStack {
   ) {
     super(scope, id, props);
 
-    const subDomainWithoutDot = new cdk.CfnParameter(this, 'subDomainWithoutDot', {
+    const subDomain = new cdk.CfnParameter(this, 'subDomain', {
       type: 'String',
-      description: 'Subdomain to map to this service (including trailing dot if any)',
+      description: 'Subdomain to map to this service',
       default: '',
     });
 
@@ -130,7 +130,7 @@ export class FargateService extends cdk.NestedStack {
 
     // create A recordset alias targeting admin service's load balancer
     new route53.ARecord(this, stack.getResourceID('Recordset'), {
-      recordName: subDomainWithoutDot.valueAsString,
+      recordName: subDomain.valueAsString,
       zone,
       target: {
         aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
