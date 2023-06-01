@@ -73,16 +73,17 @@ export class FargateService extends cdk.NestedStack {
     const secrets: { [key: string]: ecs.Secret } = {};
     const secretValues = taskConfiguration.secrets
     if (secretValues) {
-      for (const secretKey in Object.keys(secretValues)) {
-        // Convert from json string to ecs.Secret
-        const value = secretValues[secretKey]
-        const [ secretName, fieldName ] = value.split(':').slice(0, 2)
-        const secret = ssm.Secret.fromSecretNameV2(
-          this,
-          secretKey,
-          secretName
-        )
-        secrets[secretKey] = ecs.Secret.fromSecretsManager(secret, fieldName)
+      for (const [secretKey, value] of Object.entries(secretValues)) {
+        if (value) {
+          // Convert from json string to ecs.Secret
+          const [ secretName, fieldName ] = value.split(':').slice(0, 2)
+          const secret = ssm.Secret.fromSecretNameV2(
+            this,
+            secretKey,
+            secretName
+          )
+          secrets[secretKey] = ecs.Secret.fromSecretsManager(secret, fieldName)
+        }
       }
     }
 
