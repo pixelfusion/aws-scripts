@@ -34,8 +34,10 @@ class Certificate extends cdk.NestedStack {
         super(scope, id, props);
         // Create a certificate in ACM for the domain
         this.certificate = new acm.Certificate(this, stack.getResourceID('Certificate'), {
-            domainName: `*.${zone.zoneName}`,
-            subjectAlternativeNames: [],
+            domainName: zone.zoneName,
+            subjectAlternativeNames: [
+                `*.${zone.zoneName}`
+            ],
             validation: {
                 props: {
                     hostedZone: zone
