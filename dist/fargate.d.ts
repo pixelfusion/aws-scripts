@@ -19,7 +19,7 @@ export type TaskConfiguration = {
 /**
  * Generator for configuring ECS task definitions for a service
  */
-export type EnvFactory = (stage: StackConfig, defaults: Record<string, string>) => TaskConfiguration;
+export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) => TaskConfiguration;
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
