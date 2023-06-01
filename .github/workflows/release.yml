@@ -26,6 +26,19 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add dist
           git commit -m "Build dist files"
-          git push
-      - name: Tag semantic release
-        uses: pixelfusion/actions/tag@master
+          git push origin master
+          git fetch origin
+      - name: Install semantic release
+        shell: bash
+        # Note: Remove the alias line once https://github.com/semantic-release/github/pull/487 is merged
+        run: |-
+          npm install -g \
+            @semantic-release/github@npm:@achingbrain/semantic-release-github@0.0.1 \
+            semantic-release \
+            @semantic-release/exec \
+            @semantic-release/git
+      - name: Release
+        shell: bash
+        # Note: semantic-release can partially fail, but still tag (that's important)
+        # so make a best effort to continue in case of error
+        run: npx semantic-release || true
