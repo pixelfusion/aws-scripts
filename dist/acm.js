@@ -32,11 +32,20 @@ const acm = __importStar(require("aws-cdk-lib/aws-certificatemanager"));
 class Certificate extends cdk.NestedStack {
     constructor(scope, id, props, stack, zone) {
         super(scope, id, props);
+        const subDomain = new cdk.CfnParameter(this, 'subDomain', {
+            type: 'String',
+            description: 'Subdomain to map to this service',
+            default: '',
+        });
+        // Check if domain name given
+        const hasSubDomain = new cdk.CfnCondition(this, 'HasSubDomainCondition', {
+            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, ''))
+        });
         // Create a certificate in ACM for the domain
         this.certificate = new acm.Certificate(this, stack.getResourceID('Certificate'), {
-            domainName: zone.zoneName,
+            domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, `${subDomain.valueAsString}.${zone.zoneName}`, zone.zoneName).toString(),
             subjectAlternativeNames: [
-                `*.${zone.zoneName}`
+                cdk.Fn.conditionIf(hasSubDomain.logicalId, `*.${subDomain.valueAsString}.${zone.zoneName}`, `*.${zone.zoneName}`).toString()
             ],
             validation: {
                 props: {
