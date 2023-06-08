@@ -7,7 +7,7 @@ A lot of useful CDK scripts built to put together a set of useful, resuable solu
 You can add the library directly from github.
 
 ```bash
-npm install github:pixelfusion/aws-scripts#feat/distribution
+npm install github:pixelfusion/aws-scripts#master
 ```
 
 ## Setup
@@ -110,7 +110,7 @@ const certificate = new Certificate(
 
 This will create and validate a certificate within a domain attached to a zone,
 optionally prefixed with a subdomain. E.g. mysite.com with subDomain website
-would cerate a certificate for website.mysite.com / *.website.mysite.com
+would create a certificate for website.mysite.com / *.website.mysite.com
 
 This has a public `.certificate` property in case you need to extract
 the internally created AWS CDK acm.Certificate.
@@ -223,7 +223,6 @@ taskDefinition.addToExecutionRolePolicy(
 );
 ```
 
-
 ### Github
 
 Helper for creating a github user with necessary permissions to deploy stacks
@@ -289,7 +288,6 @@ new ARecord(
   new targets.LoadBalancerTarget(this.service.loadBalancer)
 );
 ```
-
 
 ### S3
 
