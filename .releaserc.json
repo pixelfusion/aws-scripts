@@ -10,6 +10,7 @@
     [
       "@semantic-release/exec",
       {
+        "prepareCmd": "./package-release.sh ${nextRelease.version}",
         "successCmd": "echo '${nextRelease.gitTag}' > version.txt"
       }
     ]
