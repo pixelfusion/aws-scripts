@@ -9,6 +9,7 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { NestedStackProps, StackConfig } from './configuration';
+import { ARecord } from "./route53";
 
 /**
  * Represents a definition for a task that can be used to generate a task definition
@@ -128,46 +129,18 @@ export class FargateService extends cdk.NestedStack {
       path: healthCheckPath.valueAsString
     });
 
-    // Check if domain name given
-    const hasDomainName = new cdk.CfnCondition(
+    // Alias
+    new ARecord(
       this,
-      'HasDomainNameCondition',
+      stack.getResourceID('Record'),
       {
-        expression: cdk.Fn.conditionNot(
-          cdk.Fn.conditionEquals(subDomain.valueAsString, '')
-        )
-      }
-    )
-
-    const isBaseDomain = new cdk.CfnCondition(
-      this,
-      'IsBaseDomainCondition',
-      {
-        expression: cdk.Fn.conditionEquals(subDomain.valueAsString, '')
-      }
-    )
-
-    // create A recordset alias targeting admin service's load balancer
-    const recordWithSubdomain = new route53.ARecord(this, stack.getResourceID('RecordsetWithSubdomain'), {
-      recordName: subDomain.valueAsString,
+        parameters: {
+          subDomain: subDomain.valueAsString
+        }
+      },
+      stack,
       zone,
-      target: {
-        aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
-      }
-    });
-
-    const cfnRecordWithSubdomain = recordWithSubdomain.node.defaultChild as route53.CfnRecordSet;
-    cfnRecordWithSubdomain.cfnOptions.condition = hasDomainName;
-
-    // Different parameters if it's a base record
-    const record = new route53.ARecord(this, stack.getResourceID('Recordset'), {
-      zone,
-      target: {
-        aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
-      }
-    });
-
-    const cfnRecord = record.node.defaultChild as route53.CfnRecordSet;
-    cfnRecord.cfnOptions.condition = isBaseDomain;
+      new targets.LoadBalancerTarget(this.service.loadBalancer)
+    );
   }
 }
