@@ -53,13 +53,13 @@ class PostgresInstance extends cdk.NestedStack {
             secretName: stack.getSecretName('RdsCredentials'),
             generateSecretString: {
                 secretStringTemplate: JSON.stringify({
-                    username: 'master'
+                    username: 'master',
                 }),
                 excludePunctuation: true,
                 passwordLength: 30,
                 includeSpace: false,
-                generateStringKey: 'password'
-            }
+                generateStringKey: 'password',
+            },
         });
         // Create a security group for the database
         const dbSecurityGroup = new ec2.SecurityGroup(this, stack.getResourceID('DatabaseSecurityGroup'), {
@@ -71,7 +71,7 @@ class PostgresInstance extends cdk.NestedStack {
         const rdsInstanceId = `${stack.getFullResourceId('RdsInstance')}`;
         this.rdsInstance = new rds.DatabaseInstance(this, rdsInstanceId, {
             engine: rds.DatabaseInstanceEngine.postgres({
-                version: rds.PostgresEngineVersion.of(postgresFullVersion.valueAsString, postgresMajorVersion.valueAsString)
+                version: rds.PostgresEngineVersion.of(postgresFullVersion.valueAsString, postgresMajorVersion.valueAsString),
             }),
             instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
             vpc: vpc,
@@ -108,7 +108,7 @@ class PostgresInstanceWithBastion extends PostgresInstance {
         // Create a key pair
         const key = new ec2.CfnKeyPair(this, stack.getResourceID('BastionKeyPair'), {
             keyName: stack.getFullResourceId('BastionKeyPair'),
-            keyType: 'ed25519'
+            keyType: 'ed25519',
         });
         // Create the bastion host
         const bastion = new ec2.Instance(this, stack.getResourceID('BastionHost'), {
@@ -119,7 +119,7 @@ class PostgresInstanceWithBastion extends PostgresInstance {
             vpcSubnets: {
                 subnetType: ec2.SubnetType.PUBLIC,
             },
-            keyName: key.keyName
+            keyName: key.keyName,
         });
         bastion.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH access from the internet');
         // Allow the bastion host to connect to the database

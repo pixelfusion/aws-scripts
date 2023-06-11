@@ -109,7 +109,7 @@ class StackConfig {
          */
         this.getStackProps = () => {
             return {
-                env: this.getEnvironment()
+                env: this.getEnvironment(),
             };
         };
         /**

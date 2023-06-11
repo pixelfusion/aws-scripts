@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
-import { NestedStackProps, StackConfig } from "./configuration";
+import { NestedStackProps, StackConfig } from './configuration';
 /**
  * Creates an ECR repository for uploading docker images to
  */

@@ -35,7 +35,7 @@ class S3Bucket extends cdk.NestedStack {
         const bucketName = new cdk.CfnParameter(this, 'bucketName', {
             type: 'String',
             description: 'Name for this bucket',
-            default: ''
+            default: '',
         });
         const publicPath = new cdk.CfnParameter(this, 'publicPath', {
             type: 'String',
@@ -49,7 +49,7 @@ class S3Bucket extends cdk.NestedStack {
             default: 'Private',
         });
         const hasBucketName = new cdk.CfnCondition(this, 'HasBucketNameCondition', {
-            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(bucketName.valueAsString, ''))
+            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(bucketName.valueAsString, '')),
         });
         // Create base bucket
         this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
@@ -65,7 +65,7 @@ class S3Bucket extends cdk.NestedStack {
         });
         // Condition for public access
         const bucketIsPublic = new cdk.CfnCondition(this, 'BucketIsPublicCondition', {
-            expression: cdk.Fn.conditionEquals(bucketAccess.valueAsString, 'Public')
+            expression: cdk.Fn.conditionEquals(bucketAccess.valueAsString, 'Public'),
         });
         // Conditionally add policy
         const bucketPolicy = new s3.CfnBucketPolicy(this, 'BucketPolicy', {
@@ -78,8 +78,8 @@ class S3Bucket extends cdk.NestedStack {
                         Action: 's3:GetObject',
                         Effect: 'Allow',
                         Resource: this.bucket.arnForObjects(publicPath.valueAsString),
-                    }
-                ]
+                    },
+                ],
             },
         });
         bucketPolicy.cfnOptions.condition = bucketIsPublic;

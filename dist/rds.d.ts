@@ -1,8 +1,8 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
-import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import * as route53 from "aws-cdk-lib/aws-route53";
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import { NestedStackProps, StackConfig } from './configuration';
 /**
  * Generate a postgres instance with secret keys and bastion server

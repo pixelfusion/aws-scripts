@@ -33,9 +33,11 @@ class EcrRepositoryStack extends cdk.NestedStack {
     constructor(scope, id, props, stack, service) {
         super(scope, id, props);
         // Create an ECR repositories
-        const repositoryName = `${stack.getSlug().toLowerCase()}/${service.toLowerCase()}`;
+        const repositoryName = `${stack
+            .getSlug()
+            .toLowerCase()}/${service.toLowerCase()}`;
         const repository = new ecr.Repository(this, stack.getResourceID(`${service}ECRRepository`), {
-            repositoryName
+            repositoryName,
         });
         repository.addLifecycleRule({
             description: 'Expire images older than 14 days',

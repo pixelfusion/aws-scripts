@@ -29,8 +29,8 @@ const ecs = __importStar(require("aws-cdk-lib/aws-ecs"));
 const ecs_patterns = __importStar(require("aws-cdk-lib/aws-ecs-patterns"));
 const ssm = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
-const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
+const route53_1 = require("./route53");
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
@@ -66,7 +66,7 @@ class FargateService extends cdk.NestedStack {
                 }
             }
         }
-        this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID("AdminService"), {
+        this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
             cluster: cluster,
             certificate: certificate,
             redirectHTTP: true,
@@ -85,45 +85,25 @@ class FargateService extends cdk.NestedStack {
                 'ecr:GetAuthorizationToken',
                 'ecr:BatchCheckLayerAvailability',
                 'ecr:GetDownloadUrlForLayer',
-                'ecr:BatchGetImage'
+                'ecr:BatchGetImage',
             ],
             resources: [repository.repositoryArn],
         }));
         // Allow secrets
         taskDefinition.addToExecutionRolePolicy(new iam.PolicyStatement({
-            actions: ["secretsmanager:GetSecretValue"],
+            actions: ['secretsmanager:GetSecretValue'],
             resources: [`${stack.getSecretBaseArn()}/*`],
         }));
         // Health check
         this.service.targetGroup.configureHealthCheck({
-            path: healthCheckPath.valueAsString
+            path: healthCheckPath.valueAsString,
         });
-        // Check if domain name given
-        const hasDomainName = new cdk.CfnCondition(this, 'HasDomainNameCondition', {
-            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, ''))
-        });
-        const isBaseDomain = new cdk.CfnCondition(this, 'IsBaseDomainCondition', {
-            expression: cdk.Fn.conditionEquals(subDomain.valueAsString, '')
-        });
-        // create A recordset alias targeting admin service's load balancer
-        const recordWithSubdomain = new route53.ARecord(this, stack.getResourceID('RecordsetWithSubdomain'), {
-            recordName: subDomain.valueAsString,
-            zone,
-            target: {
-                aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
-            }
-        });
-        const cfnRecordWithSubdomain = recordWithSubdomain.node.defaultChild;
-        cfnRecordWithSubdomain.cfnOptions.condition = hasDomainName;
-        // Different parameters if it's a base record
-        const record = new route53.ARecord(this, stack.getResourceID('Recordset'), {
-            zone,
-            target: {
-                aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
-            }
-        });
-        const cfnRecord = record.node.defaultChild;
-        cfnRecord.cfnOptions.condition = isBaseDomain;
+        // Alias
+        new route53_1.ARecord(this, stack.getResourceID('Record'), {
+            parameters: {
+                subDomain: subDomain.valueAsString,
+            },
+        }, stack, zone, new targets.LoadBalancerTarget(this.service.loadBalancer));
     }
 }
 exports.FargateService = FargateService;
