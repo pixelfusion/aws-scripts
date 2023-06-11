@@ -1,60 +1,55 @@
-import { Construct } from 'constructs';
-import * as cdk from 'aws-cdk-lib';
-import * as s3 from "aws-cdk-lib/aws-s3";
-import { NestedStackProps, StackConfig } from './configuration';
+import { Construct } from 'constructs'
+import * as cdk from 'aws-cdk-lib'
+import * as s3 from 'aws-cdk-lib/aws-s3'
+import { NestedStackProps, StackConfig } from './configuration'
 
 /**
  * Configuration options for bucket
  */
-export type BucketAccess = 'Public' | 'Private';
+export type BucketAccess = 'Public' | 'Private'
 
 /**
  * Generate an s3 bucket
  */
 export class S3Bucket extends cdk.NestedStack {
-
   public readonly bucket: s3.Bucket
 
   constructor(
     scope: Construct,
     id: string,
     props: NestedStackProps<{
-      bucketName?: string,
-      publicPath?: string,
-      bucketAccess?: BucketAccess,
+      bucketName?: string
+      publicPath?: string
+      bucketAccess?: BucketAccess
     }>,
-    stack: StackConfig
+    stack: StackConfig,
   ) {
-    super(scope, id, props);
+    super(scope, id, props)
 
     const bucketName = new cdk.CfnParameter(this, 'bucketName', {
       type: 'String',
       description: 'Name for this bucket',
-      default: ''
-    });
+      default: '',
+    })
 
     const publicPath = new cdk.CfnParameter(this, 'publicPath', {
       type: 'String',
       description: 'Public path',
       default: '/*',
-    });
+    })
 
     const bucketAccess = new cdk.CfnParameter(this, 'bucketAccess', {
       type: 'String',
       description: 'Access for this bucket',
-      allowedValues: [ 'Public', 'Private' ],
+      allowedValues: ['Public', 'Private'],
       default: 'Private',
-    });
+    })
 
-    const hasBucketName = new cdk.CfnCondition(
-      this,
-      'HasBucketNameCondition',
-      {
-        expression: cdk.Fn.conditionNot(
-          cdk.Fn.conditionEquals(bucketName.valueAsString, '')
-        )
-      }
-    )
+    const hasBucketName = new cdk.CfnCondition(this, 'HasBucketNameCondition', {
+      expression: cdk.Fn.conditionNot(
+        cdk.Fn.conditionEquals(bucketName.valueAsString, ''),
+      ),
+    })
 
     // Create base bucket
     this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
@@ -63,7 +58,7 @@ export class S3Bucket extends cdk.NestedStack {
       bucketName: cdk.Fn.conditionIf(
         hasBucketName.logicalId,
         bucketName.valueAsString,
-        cdk.Aws.NO_VALUE
+        cdk.Aws.NO_VALUE,
       ).toString(),
       blockPublicAccess: {
         blockPublicAcls: false,
@@ -71,36 +66,35 @@ export class S3Bucket extends cdk.NestedStack {
         ignorePublicAcls: false,
         restrictPublicBuckets: false,
       },
-    });
+    })
 
     // Condition for public access
     const bucketIsPublic = new cdk.CfnCondition(
       this,
       'BucketIsPublicCondition',
       {
-        expression: cdk.Fn.conditionEquals(bucketAccess.valueAsString, 'Public')
-      }
+        expression: cdk.Fn.conditionEquals(
+          bucketAccess.valueAsString,
+          'Public',
+        ),
+      },
     )
 
     // Conditionally add policy
-    const bucketPolicy = new s3.CfnBucketPolicy(
-      this,
-      'BucketPolicy',
-      {
-        bucket: this.bucket.bucketName,
-        policyDocument: {
-          Version: '2012-10-17',
-          Statement: [
-            {
-              Principal: '*',
-              Action: 's3:GetObject',
-              Effect: 'Allow',
-              Resource: this.bucket.arnForObjects(publicPath.valueAsString),
-            }
-          ]
-        },
-      }
-    )
-    bucketPolicy.cfnOptions.condition = bucketIsPublic;
+    const bucketPolicy = new s3.CfnBucketPolicy(this, 'BucketPolicy', {
+      bucket: this.bucket.bucketName,
+      policyDocument: {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Principal: '*',
+            Action: 's3:GetObject',
+            Effect: 'Allow',
+            Resource: this.bucket.arnForObjects(publicPath.valueAsString),
+          },
+        ],
+      },
+    })
+    bucketPolicy.cfnOptions.condition = bucketIsPublic
   }
 }

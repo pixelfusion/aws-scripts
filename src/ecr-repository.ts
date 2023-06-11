@@ -1,7 +1,7 @@
-import { Construct } from 'constructs';
-import * as cdk from 'aws-cdk-lib';
-import * as ecr from "aws-cdk-lib/aws-ecr";
-import { NestedStackProps, StackConfig } from "./configuration";
+import { Construct } from 'constructs'
+import * as cdk from 'aws-cdk-lib'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
+import { NestedStackProps, StackConfig } from './configuration'
 
 /**
  * Creates an ECR repository for uploading docker images to
@@ -12,40 +12,42 @@ export class EcrRepositoryStack extends cdk.NestedStack {
     id: string,
     props: NestedStackProps,
     stack: StackConfig,
-    service: string
+    service: string,
   ) {
-    super(scope, id, props);
+    super(scope, id, props)
 
     // Create an ECR repositories
-    const repositoryName = `${ stack.getSlug().toLowerCase() }/${ service.toLowerCase() }`;
+    const repositoryName = `${stack
+      .getSlug()
+      .toLowerCase()}/${service.toLowerCase()}`
     const repository = new ecr.Repository(
       this,
-      stack.getResourceID(`${ service }ECRRepository`),
+      stack.getResourceID(`${service}ECRRepository`),
       {
-        repositoryName
-      }
-    );
+        repositoryName,
+      },
+    )
     repository.addLifecycleRule({
       description: 'Expire images older than 14 days',
       maxImageAge: cdk.Duration.days(14),
       rulePriority: 1,
       tagStatus: ecr.TagStatus.UNTAGGED,
-    });
+    })
 
     repository.addLifecycleRule({
       description: 'Expire dev images older than 14 days',
       maxImageAge: cdk.Duration.days(14),
       rulePriority: 2,
       tagStatus: ecr.TagStatus.TAGGED,
-      tagPrefixList: [ 'dev-' ],
-    });
+      tagPrefixList: ['dev-'],
+    })
 
     // Export
-    const exportId = stack.getStackExportId(`${ service }ECRRepository`);
-    new cdk.CfnOutput(this, `${ exportId }Export`, {
+    const exportId = stack.getStackExportId(`${service}ECRRepository`)
+    new cdk.CfnOutput(this, `${exportId}Export`, {
       description: `ECR Repository name for Admin`,
       exportName: exportId,
       value: repository.repositoryArn,
-    });
+    })
   }
 }

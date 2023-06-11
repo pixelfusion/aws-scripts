@@ -1,47 +1,49 @@
-import { Construct } from 'constructs';
-import * as cdk from 'aws-cdk-lib';
-import * as ecs from "aws-cdk-lib/aws-ecs";
-import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
-import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as ssm from 'aws-cdk-lib/aws-secretsmanager';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as targets from 'aws-cdk-lib/aws-route53-targets';
-import { NestedStackProps, StackConfig } from './configuration';
-import { ARecord } from "./route53";
+import { Construct } from 'constructs'
+import * as cdk from 'aws-cdk-lib'
+import * as ecs from 'aws-cdk-lib/aws-ecs'
+import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
+import * as ssm from 'aws-cdk-lib/aws-secretsmanager'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as acm from 'aws-cdk-lib/aws-certificatemanager'
+import * as route53 from 'aws-cdk-lib/aws-route53'
+import * as targets from 'aws-cdk-lib/aws-route53-targets'
+import { NestedStackProps, StackConfig } from './configuration'
+import { ARecord } from './route53'
 
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
 export type TaskConfiguration = {
-  memoryLimitMiB?: number,
-  cpu?: number,
-  desiredCount?: number,
-  environment?: Record<string, string>,
-  secrets?: Record<string, string>,
+  memoryLimitMiB?: number
+  cpu?: number
+  desiredCount?: number
+  environment?: Record<string, string>
+  secrets?: Record<string, string>
 }
 
 /**
  * Generator for configuring ECS task definitions for a service
  */
-export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) => TaskConfiguration
+export type EnvFactory = (
+  stack: StackConfig,
+  defaults: Record<string, string>,
+) => TaskConfiguration
 
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
  */
 export class FargateService extends cdk.NestedStack {
-
   public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService
 
   constructor(
     scope: Construct,
     id: string,
     props: NestedStackProps<{
-      subDomain?: string,
-      healthCheckPath?: string,
-      imageVersion?: string,
+      subDomain?: string
+      healthCheckPath?: string
+      imageVersion?: string
     }>,
     stack: StackConfig,
     cluster: ecs.ICluster,
@@ -50,13 +52,13 @@ export class FargateService extends cdk.NestedStack {
     repository: ecr.IRepository,
     taskConfiguration: TaskConfiguration,
   ) {
-    super(scope, id, props);
+    super(scope, id, props)
 
     const subDomain = new cdk.CfnParameter(this, 'subDomain', {
       type: 'String',
       description: 'Subdomain to map to this service',
       default: '',
-    });
+    })
 
     const healthCheckPath = new cdk.CfnParameter(this, 'healthCheckPath', {
       type: 'String',
@@ -71,38 +73,45 @@ export class FargateService extends cdk.NestedStack {
     })
 
     // Compile secrets into list of mapped ecs.Secrets
-    const secrets: { [key: string]: ecs.Secret } = {};
+    const secrets: { [key: string]: ecs.Secret } = {}
     const secretValues = taskConfiguration.secrets
     if (secretValues) {
-      for (const [ secretKey, value ] of Object.entries(secretValues)) {
+      for (const [secretKey, value] of Object.entries(secretValues)) {
         if (value) {
           // Convert from json string to ecs.Secret
-          const [ secretName, fieldName ] = value.split(':').slice(0, 2)
+          const [secretName, fieldName] = value.split(':').slice(0, 2)
           const secret = ssm.Secret.fromSecretNameV2(
             this,
             secretKey,
-            secretName
+            secretName,
           )
           secrets[secretKey] = ecs.Secret.fromSecretsManager(secret, fieldName)
         }
       }
     }
 
-    this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID("AdminService"), {
-      cluster: cluster,
-      certificate: certificate,
-      redirectHTTP: true,
-      memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
-      cpu: taskConfiguration?.cpu || 256,
-      desiredCount: taskConfiguration?.desiredCount || 1,
-      taskImageOptions: {
-        image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion.valueAsString),
-        environment: taskConfiguration?.environment || {},
-        secrets,
+    this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(
+      this,
+      stack.getResourceID('AdminService'),
+      {
+        cluster: cluster,
+        certificate: certificate,
+        redirectHTTP: true,
+        memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
+        cpu: taskConfiguration?.cpu || 256,
+        desiredCount: taskConfiguration?.desiredCount || 1,
+        taskImageOptions: {
+          image: ecs.ContainerImage.fromEcrRepository(
+            repository,
+            imageVersion.valueAsString,
+          ),
+          environment: taskConfiguration?.environment || {},
+          secrets,
+        },
       },
-    });
+    )
 
-    const taskDefinition = this.service.taskDefinition;
+    const taskDefinition = this.service.taskDefinition
 
     taskDefinition.addToExecutionRolePolicy(
       new iam.PolicyStatement({
@@ -110,24 +119,24 @@ export class FargateService extends cdk.NestedStack {
           'ecr:GetAuthorizationToken',
           'ecr:BatchCheckLayerAvailability',
           'ecr:GetDownloadUrlForLayer',
-          'ecr:BatchGetImage'
+          'ecr:BatchGetImage',
         ],
-        resources: [ repository.repositoryArn ],
-      })
-    );
+        resources: [repository.repositoryArn],
+      }),
+    )
 
     // Allow secrets
     taskDefinition.addToExecutionRolePolicy(
       new iam.PolicyStatement({
-        actions: [ "secretsmanager:GetSecretValue" ],
-        resources: [ `${ stack.getSecretBaseArn() }/*` ],
-      })
-    );
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [`${stack.getSecretBaseArn()}/*`],
+      }),
+    )
 
     // Health check
     this.service.targetGroup.configureHealthCheck({
-      path: healthCheckPath.valueAsString
-    });
+      path: healthCheckPath.valueAsString,
+    })
 
     // Alias
     new ARecord(
@@ -135,12 +144,12 @@ export class FargateService extends cdk.NestedStack {
       stack.getResourceID('Record'),
       {
         parameters: {
-          subDomain: subDomain.valueAsString
-        }
+          subDomain: subDomain.valueAsString,
+        },
       },
       stack,
       zone,
-      new targets.LoadBalancerTarget(this.service.loadBalancer)
-    );
+      new targets.LoadBalancerTarget(this.service.loadBalancer),
+    )
   }
 }
