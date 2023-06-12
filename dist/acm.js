@@ -42,16 +42,21 @@ class Certificate extends cdk.NestedStack {
             expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, '')),
         });
         // Create a certificate in ACM for the domain
-        this.certificate = new acm.Certificate(this, stack.getResourceID('Certificate'), {
-            domainName: zone.zoneName,
-            subjectAlternativeNames: [cdk.Fn.join('.', ['*', zone.zoneName])],
-            validation: {
-                props: {
-                    hostedZone: zone,
+        const certificate = new acm.CfnCertificate(this, stack.getResourceID('CfnCertificate'), {
+            domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, `${subDomain.valueAsString}.${zone.zoneName}`, zone.zoneName).toString(),
+            subjectAlternativeNames: [
+                cdk.Fn.conditionIf(hasSubDomain.logicalId, `*.${subDomain.valueAsString}.${zone.zoneName}`, `*.${zone.zoneName}`).toString(),
+            ],
+            validationMethod: acm.ValidationMethod.DNS,
+            domainValidationOptions: [
+                {
+                    domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, `*.${subDomain.valueAsString}.${zone.zoneName}`, `*.${zone.zoneName}`).toString(),
+                    hostedZoneId: zone.hostedZoneId,
                 },
-                method: acm.ValidationMethod.DNS,
-            },
+            ],
         });
+        // CDK prefers an ICertificate so wrap it here
+        this.certificate = acm.Certificate.fromCertificateArn(this, stack.getResourceID('Certificate'), certificate.ref);
     }
 }
 exports.Certificate = Certificate;

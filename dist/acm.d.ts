@@ -7,7 +7,7 @@ import { NestedStackProps, StackConfig } from './configuration';
  * Generates an ACMS certificate
  */
 export declare class Certificate extends cdk.NestedStack {
-    readonly certificate: acm.Certificate;
+    readonly certificate: acm.ICertificate;
     constructor(scope: Construct, id: string, props: NestedStackProps<{
         subDomain?: string;
     }>, stack: StackConfig, zone: route53.IHostedZone);

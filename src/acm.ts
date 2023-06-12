@@ -8,7 +8,7 @@ import { NestedStackProps, StackConfig } from './configuration'
  * Generates an ACMS certificate
  */
 export class Certificate extends cdk.NestedStack {
-  public readonly certificate: acm.Certificate
+  public readonly certificate: acm.ICertificate
 
   constructor(
     scope: Construct,
@@ -35,19 +35,41 @@ export class Certificate extends cdk.NestedStack {
     })
 
     // Create a certificate in ACM for the domain
-    this.certificate = new acm.Certificate(
+    const certificate = new acm.CfnCertificate(
+      this,
+      stack.getResourceID('CfnCertificate'),
+      {
+        domainName: cdk.Fn.conditionIf(
+          hasSubDomain.logicalId,
+          `${subDomain.valueAsString}.${zone.zoneName}`,
+          zone.zoneName,
+        ).toString(),
+        subjectAlternativeNames: [
+          cdk.Fn.conditionIf(
+            hasSubDomain.logicalId,
+            `*.${subDomain.valueAsString}.${zone.zoneName}`,
+            `*.${zone.zoneName}`,
+          ).toString(),
+        ],
+        validationMethod: acm.ValidationMethod.DNS,
+        domainValidationOptions: [
+          {
+            domainName: cdk.Fn.conditionIf(
+              hasSubDomain.logicalId,
+              `*.${subDomain.valueAsString}.${zone.zoneName}`,
+              `*.${zone.zoneName}`,
+            ).toString(),
+            hostedZoneId: zone.hostedZoneId,
+          },
+        ],
+      },
+    )
+
+    // CDK prefers an ICertificate so wrap it here
+    this.certificate = acm.Certificate.fromCertificateArn(
       this,
       stack.getResourceID('Certificate'),
-      {
-        domainName: zone.zoneName,
-        subjectAlternativeNames: [cdk.Fn.join('.', ['*', zone.zoneName])],
-        validation: {
-          props: {
-            hostedZone: zone,
-          },
-          method: acm.ValidationMethod.DNS,
-        },
-      },
+      certificate.ref,
     )
   }
 }
