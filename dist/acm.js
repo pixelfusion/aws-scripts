@@ -39,20 +39,20 @@ class Certificate extends cdk.NestedStack {
         });
         // Check if domain name given
         const hasSubDomain = new cdk.CfnCondition(this, 'HasSubDomainCondition', {
-            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, ''))
+            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, '')),
         });
         // Create a certificate in ACM for the domain
         this.certificate = new acm.Certificate(this, stack.getResourceID('Certificate'), {
-            domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, `${subDomain.valueAsString}.${zone.zoneName}`, zone.zoneName).toString(),
+            domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, cdk.Fn.join('.', [subDomain.valueAsString, zone.zoneName]), zone.zoneName).toString(),
             subjectAlternativeNames: [
-                cdk.Fn.conditionIf(hasSubDomain.logicalId, `*.${subDomain.valueAsString}.${zone.zoneName}`, `*.${zone.zoneName}`).toString()
+                cdk.Fn.conditionIf(hasSubDomain.logicalId, cdk.Fn.join('.', ['*', subDomain.valueAsString, zone.zoneName]), cdk.Fn.join('.', ['*', zone.zoneName])).toString(),
             ],
             validation: {
                 props: {
-                    hostedZone: zone
+                    hostedZone: zone,
                 },
-                method: acm.ValidationMethod.DNS
-            }
+                method: acm.ValidationMethod.DNS,
+            },
         });
     }
 }
