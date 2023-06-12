@@ -1,4 +1,5 @@
 export * from './acm'
+export * from './build-pipeline'
 export * from './configuration'
 export * from './ecr-repository'
 export * from './fargate'

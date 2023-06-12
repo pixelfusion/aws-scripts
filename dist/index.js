@@ -15,6 +15,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./acm"), exports);
+__exportStar(require("./build-pipeline"), exports);
 __exportStar(require("./configuration"), exports);
 __exportStar(require("./ecr-repository"), exports);
 __exportStar(require("./fargate"), exports);
