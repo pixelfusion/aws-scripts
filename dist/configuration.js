@@ -130,7 +130,7 @@ class StackConfig {
          * @return {String} an export
          */
         this.getStackExportId = (name) => {
-            return `${this.getSlug()}-${this.getStageName()}-${name}`;
+            return `${this.getSlug()}-${this.getStageId()}-${name}`;
         };
         /**
          * Get base resource ID. Useful for the base stack name.
@@ -138,7 +138,7 @@ class StackConfig {
          * @eturn {string}
          */
         this.getBaseResourceId = () => {
-            return `${this.getSlug()}-${this.getStageName()}-${this.getStackName()}`;
+            return `${this.getSlug()}-${this.getStageId()}-${this.getId()}`;
         };
         /**
          * Generate a resource ARN for any component.
