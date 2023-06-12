@@ -85,9 +85,10 @@ function getCredentials(ci = process.env.CI) {
  *
  * @return SecretsManagerClient
  */
-const generateSecretManager = () => {
+const generateSecretManager = (region) => {
     return new client_secrets_manager_1.SecretsManagerClient({
         credentials: getCredentials(),
+        ...(region ? { region } : {}),
     });
 };
 exports.generateSecretManager = generateSecretManager;

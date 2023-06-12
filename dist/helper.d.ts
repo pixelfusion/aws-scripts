@@ -11,7 +11,7 @@ export declare const loadJsonFile: (dirname: string, relativePath: string) => an
  *
  * @return SecretsManagerClient
  */
-export declare const generateSecretManager: () => SecretsManagerClient;
+export declare const generateSecretManager: (region?: string) => SecretsManagerClient;
 /**
  * Create or update a secret with a list of values.
  * If you specify a value for a secret that has new keys,
