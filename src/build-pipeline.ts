@@ -51,7 +51,7 @@ export class BuildPipeline extends cdk.NestedStack {
       // Secret keys
       webhookSecretName = stack.getSecretName('Pipeline'),
       webhookSecretKey = 'secret',
-      githubAccessTokenSecretName = stack.getSecretName('Pipeline'),
+      githubAccessTokenSecretName = stack.getSecretName('GithubToken'),
       githubAccessTokenSecretKey = 'secret',
       // Args
       buildProjectImage = codebuild.LinuxBuildImage.STANDARD_7_0.imageId,

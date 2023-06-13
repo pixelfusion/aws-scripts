@@ -51,7 +51,7 @@ class BuildPipeline extends cdk.NestedStack {
         // Git details
         githubRepositoryOwner, githubRepositoryName, githubBranchName, 
         // Secret keys
-        webhookSecretName = stack.getSecretName('Pipeline'), webhookSecretKey = 'secret', githubAccessTokenSecretName = stack.getSecretName('Pipeline'), githubAccessTokenSecretKey = 'secret', 
+        webhookSecretName = stack.getSecretName('Pipeline'), webhookSecretKey = 'secret', githubAccessTokenSecretName = stack.getSecretName('GithubToken'), githubAccessTokenSecretKey = 'secret', 
         // Args
         buildProjectImage = codebuild.LinuxBuildImage.STANDARD_7_0.imageId, environment = {}, } = props;
         // Actually create these parameters now once constructor has been called
