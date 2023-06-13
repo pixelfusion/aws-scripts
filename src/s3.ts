@@ -1,12 +1,22 @@
 import { Construct } from 'constructs'
 import * as cdk from 'aws-cdk-lib'
 import * as s3 from 'aws-cdk-lib/aws-s3'
-import { NestedStackProps, StackConfig } from './configuration'
+import { StackConfig } from './configuration'
 
 /**
  * Configuration options for bucket
  */
-export type BucketAccess = 'Public' | 'Private'
+enum BucketAccess {
+  Public = 'Public',
+  Private = 'Priavte',
+}
+
+interface S3BucketProps extends cdk.NestedStackProps {
+  bucketName?: string
+  publicPath?: string
+  bucketAccess?: BucketAccess
+  stack: StackConfig
+}
 
 /**
  * Generate an s3 bucket
@@ -14,52 +24,20 @@ export type BucketAccess = 'Public' | 'Private'
 export class S3Bucket extends cdk.NestedStack {
   public readonly bucket: s3.Bucket
 
-  constructor(
-    scope: Construct,
-    id: string,
-    props: NestedStackProps<{
-      bucketName?: string
-      publicPath?: string
-      bucketAccess?: BucketAccess
-    }>,
-    stack: StackConfig,
-  ) {
+  constructor(scope: Construct, id: string, props: S3BucketProps) {
     super(scope, id, props)
-
-    const bucketName = new cdk.CfnParameter(this, 'bucketName', {
-      type: 'String',
-      description: 'Name for this bucket',
-      default: '',
-    })
-
-    const publicPath = new cdk.CfnParameter(this, 'publicPath', {
-      type: 'String',
-      description: 'Public path',
-      default: '/*',
-    })
-
-    const bucketAccess = new cdk.CfnParameter(this, 'bucketAccess', {
-      type: 'String',
-      description: 'Access for this bucket',
-      allowedValues: ['Public', 'Private'],
-      default: 'Private',
-    })
-
-    const hasBucketName = new cdk.CfnCondition(this, 'HasBucketNameCondition', {
-      expression: cdk.Fn.conditionNot(
-        cdk.Fn.conditionEquals(bucketName.valueAsString, ''),
-      ),
-    })
+    const {
+      bucketName,
+      publicPath = '/*',
+      bucketAccess = BucketAccess.Private,
+      stack,
+    } = props
 
     // Create base bucket
     this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      publicReadAccess: false,
-      bucketName: cdk.Fn.conditionIf(
-        hasBucketName.logicalId,
-        bucketName.valueAsString,
-        cdk.Aws.NO_VALUE,
-      ).toString(),
+      publicReadAccess: false, // Note: Grant selective read on pattern after this
+      bucketName,
       blockPublicAccess: {
         blockPublicAcls: false,
         blockPublicPolicy: false,
@@ -68,33 +46,22 @@ export class S3Bucket extends cdk.NestedStack {
       },
     })
 
-    // Condition for public access
-    const bucketIsPublic = new cdk.CfnCondition(
-      this,
-      'BucketIsPublicCondition',
-      {
-        expression: cdk.Fn.conditionEquals(
-          bucketAccess.valueAsString,
-          'Public',
-        ),
-      },
-    )
-
-    // Conditionally add policy
-    const bucketPolicy = new s3.CfnBucketPolicy(this, 'BucketPolicy', {
-      bucket: this.bucket.bucketName,
-      policyDocument: {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Principal: '*',
-            Action: 's3:GetObject',
-            Effect: 'Allow',
-            Resource: this.bucket.arnForObjects(publicPath.valueAsString),
-          },
-        ],
-      },
-    })
-    bucketPolicy.cfnOptions.condition = bucketIsPublic
+    if (bucketAccess === BucketAccess.Public) {
+      // Conditionally add policy
+      new s3.CfnBucketPolicy(this, 'BucketPolicy', {
+        bucket: this.bucket.bucketName,
+        policyDocument: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Principal: '*',
+              Action: 's3:GetObject',
+              Effect: 'Allow',
+              Resource: this.bucket.arnForObjects(publicPath),
+            },
+          ],
+        },
+      })
+    }
   }
 }

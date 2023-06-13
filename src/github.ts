@@ -1,13 +1,12 @@
 import { Construct } from 'constructs'
 import * as cdk from 'aws-cdk-lib'
 import * as iam from 'aws-cdk-lib/aws-iam'
-import { NestedStackProps } from './configuration'
 
 /**
  * Stack to generate a GitHub deployer, along with key and secret for loading into GitHub secrets
  */
 export class GithubDeployStack extends cdk.NestedStack {
-  constructor(scope: Construct, id: string, props: NestedStackProps) {
+  constructor(scope: Construct, id: string, props: cdk.NestedStackProps) {
     super(scope, id, props)
 
     // Create IAM user

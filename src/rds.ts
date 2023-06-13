@@ -1,11 +1,18 @@
 import { Construct } from 'constructs'
 import * as cdk from 'aws-cdk-lib'
-import { RemovalPolicy } from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ssm from 'aws-cdk-lib/aws-secretsmanager'
 import * as rds from 'aws-cdk-lib/aws-rds'
 import * as route53 from 'aws-cdk-lib/aws-route53'
-import { NestedStackProps, StackConfig } from './configuration'
+import { StackConfig } from './configuration'
+import { ARecord } from './route53'
+
+interface PostgresInstanceProps extends cdk.NestedStackProps {
+  postgresFullVersion?: string
+  postgresMajorVersion?: string
+  stack: StackConfig
+  vpc: ec2.IVpc
+}
 
 /**
  * Generate a postgres instance with secret keys and bastion server
@@ -13,39 +20,16 @@ import { NestedStackProps, StackConfig } from './configuration'
 export class PostgresInstance extends cdk.NestedStack {
   protected readonly rdsInstance: rds.DatabaseInstance
 
-  constructor(
-    scope: Construct,
-    id: string,
-    props: NestedStackProps<{
-      postgresFullVersion?: string
-      postgresMajorVersion?: string
-    }>,
-    // Postgres instance
-    stack: StackConfig,
-    vpc: ec2.IVpc,
-  ) {
+  constructor(scope: Construct, id: string, props: PostgresInstanceProps) {
     super(scope, id, props)
 
-    const postgresFullVersion = new cdk.CfnParameter(
-      this,
-      'postgresFullVersion',
-      {
-        type: 'String',
-        description: 'Postgres engine full version',
-        default: rds.PostgresEngineVersion.VER_15_2.postgresFullVersion,
-      },
-    )
-
-    const postgresMajorVersion = new cdk.CfnParameter(
-      this,
-      'postgresMajorVersion',
-      {
-        type: 'String',
-        description:
-          'Postgres engine major version. This should match the full version',
-        default: '15',
-      },
-    )
+    const {
+      postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
+        .postgresFullVersion,
+      postgresMajorVersion = '15',
+      stack,
+      vpc,
+    } = props
 
     // Create postgres database secret
     const databaseCredentialsSecret = new ssm.Secret(
@@ -85,8 +69,8 @@ export class PostgresInstance extends cdk.NestedStack {
     this.rdsInstance = new rds.DatabaseInstance(this, rdsInstanceId, {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.of(
-          postgresFullVersion.valueAsString,
-          postgresMajorVersion.valueAsString,
+          postgresFullVersion,
+          postgresMajorVersion,
         ),
       }),
       instanceType: ec2.InstanceType.of(
@@ -100,9 +84,14 @@ export class PostgresInstance extends cdk.NestedStack {
       securityGroups: [dbSecurityGroup],
       credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
       deletionProtection: true,
-      removalPolicy: RemovalPolicy.SNAPSHOT,
+      removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
     })
   }
+}
+
+interface PostgresInstanceWithBastionProps extends PostgresInstanceProps {
+  bastionSubdomainIncludingDot?: string
+  zone: route53.IHostedZone
 }
 
 /**
@@ -112,23 +101,11 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
   constructor(
     scope: Construct,
     id: string,
-    props: NestedStackProps<{
-      postgresFullVersion?: string
-      postgresMajorVersion?: string
-      bastionSubdomain?: string
-    }>,
-    // Postgres instance
-    stack: StackConfig,
-    vpc: ec2.IVpc,
-    zone: route53.IHostedZone,
+    props: PostgresInstanceWithBastionProps,
   ) {
-    super(scope, id, props, stack, vpc)
+    super(scope, id, props)
 
-    const bastionSubdomain = new cdk.CfnParameter(this, 'bastionSubdomain', {
-      type: 'String',
-      description: 'Subdomain for hostname',
-      default: 'ssh',
-    })
+    const { stack, vpc, zone, bastionSubdomainIncludingDot } = props
 
     // Create a security group for the bastion host
     const bastionSecurityGroup = new ec2.SecurityGroup(
@@ -189,10 +166,11 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
     )
 
     // Create hostname for ssh. for bastion
-    new route53.ARecord(this, stack.getResourceID('BastionRecordSet'), {
-      recordName: bastionSubdomain.valueAsString,
-      zone: zone,
+    new ARecord(this, stack.getResourceID('BastionRecordSet'), {
+      subDomainIncludingDot: bastionSubdomainIncludingDot,
       target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
+      stack,
+      zone,
     })
   }
 }

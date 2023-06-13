@@ -1,11 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 /**
- * Allows you to type nested stack props
- */
-export interface NestedStackProps<T extends object = {}> extends cdk.NestedStackProps {
-    readonly parameters?: T & Record<string, string>;
-}
-/**
  * Props required for a single stack. slug, account_id and region need to be declared
  * either at the stack or the stage level.
  *

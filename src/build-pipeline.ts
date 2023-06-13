@@ -7,9 +7,9 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { BuildEnvironmentVariable } from 'aws-cdk-lib/aws-codebuild'
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
 import * as iam from 'aws-cdk-lib/aws-iam'
-import { NestedStackProps, StackConfig } from './configuration'
+import { StackConfig } from './configuration'
 
-interface BuildPipelineProps {
+interface BuildPipelineProps extends cdk.NestedStackProps {
   githubRepositoryOwner: string
   githubRepositoryName: string
   githubBranchName: string
@@ -20,6 +20,9 @@ interface BuildPipelineProps {
   // Github access (source access + webhook)
   githubAccessTokenSecretName?: string
   githubAccessTokenSecretKey?: string
+  // Args
+  stack: StackConfig
+  environment: Record<string, string>
 }
 
 /**
@@ -35,118 +38,47 @@ interface BuildPipelineProps {
  *  of cloudformation parameter pairs, each with a name and value property.
  */
 export class BuildPipeline extends cdk.NestedStack {
-  constructor(
-    scope: Construct,
-    id: string,
-    props: NestedStackProps<BuildPipelineProps>,
-    stack: StackConfig,
-    environment: Record<string, string>,
-  ) {
-    const newProps = { ...props, parameters: { ...props.parameters } }
-    const environmentKeys = Object.keys(environment)
-
-    // Dynamically create a bunch of parameters for environments
-    environmentKeys.forEach((environmentKey, index) => {
-      const paramKeyName = `Environment${index + 1}Key`
-      const paramValueName = `Environment${index + 1}Value`
-      newProps.parameters[paramKeyName] = environmentKey
-      newProps.parameters[paramValueName] = environment[environmentKey]
-    })
-
+  constructor(scope: Construct, id: string, props: BuildPipelineProps) {
     // Create
-    super(scope, id, newProps)
+    super(scope, id, props)
+
+    const {
+      stack,
+      // Git details
+      githubRepositoryOwner,
+      githubRepositoryName,
+      githubBranchName,
+      // Secret keys
+      webhookSecretName = stack.getSecretName('Pipeline'),
+      webhookSecretKey = 'secret',
+      githubAccessTokenSecretName = stack.getSecretName('Pipeline'),
+      githubAccessTokenSecretKey = 'secret',
+      // Args
+      buildProjectImage = codebuild.LinuxBuildImage.STANDARD_7_0.imageId,
+      environment = {},
+    } = props
 
     // Actually create these parameters now once constructor has been called
     const environmentVariables: Record<string, BuildEnvironmentVariable> = {}
-    environmentKeys.forEach((environmentKey, index) => {
-      const key = new cdk.CfnParameter(this, `Environment${index + 1}Key`, {
-        type: 'String',
-        description: 'Name of custom environment value for this build project',
-      })
-      const value = new cdk.CfnParameter(this, `Environment${index + 1}Value`, {
-        type: 'String',
-        description: 'Value of custom environment value for this build project',
-      })
-
+    Object.keys(environment).forEach((environmentKey) => {
       // Build environment variables for project
-      environmentVariables[key.valueAsString] = {
-        value: value.valueAsString,
+      environmentVariables[environmentKey] = {
+        value: environment[environmentKey],
       }
     })
-
-    // Other parameters here
-    const githubRepositoryOwner = new cdk.CfnParameter(
-      this,
-      `githubRepositoryOwner`,
-      {
-        type: 'String',
-        description: 'Owner name of github repository',
-      },
-    )
-
-    const githubRepositoryName = new cdk.CfnParameter(
-      this,
-      `githubRepositoryName`,
-      {
-        type: 'String',
-        description: 'Name of github repository',
-      },
-    )
-    const githubBranchName = new cdk.CfnParameter(this, `githubBranchName`, {
-      type: 'String',
-      description: 'Branch name to release from',
-    })
-
-    const buildProjectImage = new cdk.CfnParameter(this, `buildProjectImage`, {
-      type: 'String',
-      description: 'Codebuild image version',
-      default: codebuild.LinuxBuildImage.STANDARD_7_0.imageId,
-    })
-
-    const webhookSecretName = new cdk.CfnParameter(this, `webhookSecretName`, {
-      type: 'String',
-      description: 'Name of secret key storing webhook tokens',
-      default: stack.getSecretName('Pipeline'),
-    })
-
-    const webhookSecretKey = new cdk.CfnParameter(this, `webhookSecretKey`, {
-      type: 'String',
-      description: 'Key to use for getting external webhook secret token',
-      default: 'secret',
-    })
-
-    const githubAccessTokenSecretName = new cdk.CfnParameter(
-      this,
-      'githubAccessTokenSecretName',
-      {
-        type: 'String',
-        description: 'Name of secret for storing github token',
-        default: stack.getSecretName('GithubToken'),
-      },
-    )
-
-    const githubAccessTokenSecretKey = new cdk.CfnParameter(
-      this,
-      `githubAccessTokenSecretKey`,
-      {
-        type: 'String',
-        description: 'Key to use for getting external github access token',
-        default: 'secret',
-      },
-    )
 
     // Get secrets
     const githubAccessTokenSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
-      'WebhookAccessTokenSecret',
-      githubAccessTokenSecretName.valueAsString,
-    )
+      'GithubAccessTokenSecret',
+      githubAccessTokenSecretName,
+    ).secretValueFromJson(githubAccessTokenSecretKey)
 
     const webhookAccessTokenSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
       'WebhookAccessTokenSecret',
-      webhookSecretName.valueAsString,
-    )
+      webhookSecretName,
+    ).secretValueFromJson(webhookSecretKey)
 
     const codePipeline = new codepipeline.Pipeline(this, 'Pipeline', {
       pipelineName: 'MyPipeline',
@@ -157,13 +89,11 @@ export class BuildPipeline extends cdk.NestedStack {
     // GitHubbuild action
     const githubSourceAction = new codepipelineActions.GitHubSourceAction({
       actionName: 'SourceAction',
-      owner: githubRepositoryOwner.valueAsString,
-      repo: githubRepositoryName.valueAsString,
-      branch: githubBranchName.valueAsString,
+      owner: githubRepositoryOwner,
+      repo: githubRepositoryName,
+      branch: githubBranchName,
       output: outputArtifact,
-      oauthToken: githubAccessTokenSecret.secretValueFromJson(
-        githubAccessTokenSecretKey.valueAsString,
-      ),
+      oauthToken: githubAccessTokenSecret,
       trigger: GitHubTrigger.WEBHOOK,
     })
 
@@ -176,9 +106,8 @@ export class BuildPipeline extends cdk.NestedStack {
     const buildProject = new codebuild.PipelineProject(this, 'BuildProject', {
       projectName: 'MyBuildProject',
       environment: {
-        buildImage: codebuild.LinuxBuildImage.fromCodeBuildImageId(
-          buildProjectImage.valueAsString,
-        ),
+        buildImage:
+          codebuild.LinuxBuildImage.fromCodeBuildImageId(buildProjectImage),
         environmentVariables,
       },
     })
@@ -190,9 +119,7 @@ export class BuildPipeline extends cdk.NestedStack {
       filters: [
         {
           jsonPath: '$.secret',
-          matchEquals: webhookAccessTokenSecret
-            .secretValueFromJson(webhookSecretKey.valueAsString)
-            .toString(),
+          matchEquals: webhookAccessTokenSecret.toString(),
         },
       ],
       targetAction: 'SourceAction',

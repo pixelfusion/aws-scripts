@@ -1,7 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { NestedStackProps, StackConfig } from './configuration';
-interface BuildPipelineProps {
+import { StackConfig } from './configuration';
+interface BuildPipelineProps extends cdk.NestedStackProps {
     githubRepositoryOwner: string;
     githubRepositoryName: string;
     githubBranchName: string;
@@ -10,6 +10,8 @@ interface BuildPipelineProps {
     webhookSecretKey?: string;
     githubAccessTokenSecretName?: string;
     githubAccessTokenSecretKey?: string;
+    stack: StackConfig;
+    environment: Record<string, string>;
 }
 /**
  * Generates a codebuild project with a pipeline.
@@ -24,6 +26,6 @@ interface BuildPipelineProps {
  *  of cloudformation parameter pairs, each with a name and value property.
  */
 export declare class BuildPipeline extends cdk.NestedStack {
-    constructor(scope: Construct, id: string, props: NestedStackProps<BuildPipelineProps>, stack: StackConfig, environment: Record<string, string>);
+    constructor(scope: Construct, id: string, props: BuildPipelineProps);
 }
 export {};

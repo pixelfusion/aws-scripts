@@ -30,33 +30,15 @@ const acm = __importStar(require("aws-cdk-lib/aws-certificatemanager"));
  * Generates an ACMS certificate
  */
 class Certificate extends cdk.NestedStack {
-    constructor(scope, id, props, stack, zone) {
+    constructor(scope, id, props) {
         super(scope, id, props);
-        const subDomain = new cdk.CfnParameter(this, 'subDomain', {
-            type: 'String',
-            description: 'Subdomain to map to this service',
-            default: '',
-        });
-        // Check if domain name given
-        const hasSubDomain = new cdk.CfnCondition(this, 'HasSubDomainCondition', {
-            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, '')),
-        });
+        const { subDomainIncludingDot, stack, zone } = props;
         // Create a certificate in ACM for the domain
-        const certificate = new acm.CfnCertificate(this, stack.getResourceID('CfnCertificate'), {
-            domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, `${subDomain.valueAsString}.${zone.zoneName}`, zone.zoneName).toString(),
-            subjectAlternativeNames: [
-                cdk.Fn.conditionIf(hasSubDomain.logicalId, `*.${subDomain.valueAsString}.${zone.zoneName}`, `*.${zone.zoneName}`).toString(),
-            ],
-            validationMethod: acm.ValidationMethod.DNS,
-            domainValidationOptions: [
-                {
-                    domainName: cdk.Fn.conditionIf(hasSubDomain.logicalId, `*.${subDomain.valueAsString}.${zone.zoneName}`, `*.${zone.zoneName}`).toString(),
-                    hostedZoneId: zone.hostedZoneId,
-                },
-            ],
+        this.certificate = new acm.Certificate(this, stack.getResourceID('Certificate'), {
+            domainName: `${subDomainIncludingDot}${zone.zoneName}`,
+            subjectAlternativeNames: [`*.${subDomainIncludingDot}${zone.zoneName}`],
+            validation: acm.CertificateValidation.fromDns(zone),
         });
-        // CDK prefers an ICertificate so wrap it here
-        this.certificate = acm.Certificate.fromCertificateArn(this, stack.getResourceID('Certificate'), certificate.ref);
     }
 }
 exports.Certificate = Certificate;

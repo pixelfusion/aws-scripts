@@ -1,12 +1,16 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { NestedStackProps, StackConfig } from './configuration';
+import { StackConfig } from './configuration';
 import * as route53 from 'aws-cdk-lib/aws-route53';
+export interface ARecordProps extends cdk.NestedStackProps {
+    subDomainIncludingDot?: string;
+    stack: StackConfig;
+    zone: route53.IHostedZone;
+    target: route53.RecordTarget;
+}
 /**
  * Create A-record to any resource
  */
 export declare class ARecord extends cdk.NestedStack {
-    constructor(scope: Construct, id: string, props: NestedStackProps<{
-        subDomain?: string;
-    }>, stack: StackConfig, zone: route53.IHostedZone, aliasTarget: route53.IAliasRecordTarget);
+    constructor(scope: Construct, id: string, props: ARecordProps);
 }

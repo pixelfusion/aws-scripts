@@ -27,21 +27,17 @@ exports.WebsiteDistributionAlias = exports.WebsiteDistribution = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const cf = __importStar(require("aws-cdk-lib/aws-cloudfront"));
 const cf_origins = __importStar(require("aws-cdk-lib/aws-cloudfront-origins"));
+const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const route53_1 = require("./route53");
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
 /**
  * Generate a cloudfront distribution for serving content from an s3 bucket
  */
 class WebsiteDistribution extends cdk.NestedStack {
-    constructor(scope, id, props, stack, certificate, bucket) {
+    constructor(scope, id, props) {
         super(scope, id, props);
-        const domainNames = new cdk.CfnParameter(this, 'domainNames', {
-            type: 'String',
-            description: 'Provide a comma-separated list of valid domain names using only lowercase letters, numbers, and dash (-)',
-            default: '',
-            allowedPattern: '^[a-z0-9-,\\.\\*]*$',
-        });
-        this.distribution = new cf.Distribution(this, 'Distribution', {
+        const { domainNames, stack, certificate, bucket } = props;
+        this.distribution = new cf.Distribution(this, stack.getResourceID('Distribution'), {
             defaultBehavior: {
                 origin: new cf_origins.S3Origin(bucket),
                 cachePolicy: cf.CachePolicy.CACHING_OPTIMIZED,
@@ -49,10 +45,10 @@ class WebsiteDistribution extends cdk.NestedStack {
                 allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD,
                 compress: true,
             },
-            domainNames: cdk.Fn.split(',', domainNames.valueAsString),
+            domainNames,
             priceClass: cf.PriceClass.PRICE_CLASS_ALL,
             httpVersion: cf.HttpVersion.HTTP2,
-            certificate: certificate,
+            certificate,
             errorResponses: [
                 {
                     httpStatus: 404,
@@ -68,8 +64,11 @@ exports.WebsiteDistribution = WebsiteDistribution;
  * Attach a route53 alias to this distribution
  */
 class WebsiteDistributionAlias extends route53_1.ARecord {
-    constructor(scope, id, props, stack, zone, distribution) {
-        super(scope, id, props, stack, zone, new targets.CloudFrontTarget(distribution));
+    constructor(scope, id, props) {
+        super(scope, id, {
+            ...props,
+            target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(props.distribution)),
+        });
     }
 }
 exports.WebsiteDistributionAlias = WebsiteDistributionAlias;

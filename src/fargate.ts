@@ -8,7 +8,7 @@ import * as iam from 'aws-cdk-lib/aws-iam'
 import * as acm from 'aws-cdk-lib/aws-certificatemanager'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as targets from 'aws-cdk-lib/aws-route53-targets'
-import { NestedStackProps, StackConfig } from './configuration'
+import { StackConfig } from './configuration'
 import { ARecord } from './route53'
 
 /**
@@ -30,6 +30,18 @@ export type EnvFactory = (
   defaults: Record<string, string>,
 ) => TaskConfiguration
 
+interface FargateServiceProps extends cdk.NestedStackProps {
+  subDomainIncludingDot?: string
+  healthCheckPath?: string
+  imageVersion?: string
+  stack: StackConfig
+  cluster: ecs.ICluster
+  certificate: acm.ICertificate
+  zone: route53.IHostedZone
+  repository: ecr.IRepository
+  taskConfiguration: TaskConfiguration
+}
+
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
@@ -37,40 +49,20 @@ export type EnvFactory = (
 export class FargateService extends cdk.NestedStack {
   public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService
 
-  constructor(
-    scope: Construct,
-    id: string,
-    props: NestedStackProps<{
-      subDomain?: string
-      healthCheckPath?: string
-      imageVersion?: string
-    }>,
-    stack: StackConfig,
-    cluster: ecs.ICluster,
-    certificate: acm.ICertificate,
-    zone: route53.IHostedZone,
-    repository: ecr.IRepository,
-    taskConfiguration: TaskConfiguration,
-  ) {
+  constructor(scope: Construct, id: string, props: FargateServiceProps) {
     super(scope, id, props)
 
-    const subDomain = new cdk.CfnParameter(this, 'subDomain', {
-      type: 'String',
-      description: 'Subdomain to map to this service',
-      default: '',
-    })
-
-    const healthCheckPath = new cdk.CfnParameter(this, 'healthCheckPath', {
-      type: 'String',
-      description: 'Path to health check url',
-      default: '/health-check',
-    })
-
-    const imageVersion = new cdk.CfnParameter(this, 'imageVersion', {
-      type: 'String',
-      description: 'Docker image version to use',
-      default: 'latest',
-    })
+    const {
+      healthCheckPath = '/health-check',
+      imageVersion = 'latest',
+      subDomainIncludingDot = '',
+      stack,
+      cluster,
+      certificate,
+      zone,
+      repository,
+      taskConfiguration,
+    } = props
 
     // Compile secrets into list of mapped ecs.Secrets
     const secrets: { [key: string]: ecs.Secret } = {}
@@ -101,10 +93,7 @@ export class FargateService extends cdk.NestedStack {
         cpu: taskConfiguration?.cpu || 256,
         desiredCount: taskConfiguration?.desiredCount || 1,
         taskImageOptions: {
-          image: ecs.ContainerImage.fromEcrRepository(
-            repository,
-            imageVersion.valueAsString,
-          ),
+          image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion),
           environment: taskConfiguration?.environment || {},
           secrets,
         },
@@ -135,21 +124,17 @@ export class FargateService extends cdk.NestedStack {
 
     // Health check
     this.service.targetGroup.configureHealthCheck({
-      path: healthCheckPath.valueAsString,
+      path: healthCheckPath,
     })
 
     // Alias
-    new ARecord(
-      this,
-      stack.getResourceID('Record'),
-      {
-        parameters: {
-          subDomain: subDomain.valueAsString,
-        },
-      },
+    new ARecord(this, stack.getResourceID('Record'), {
+      subDomainIncludingDot,
+      target: route53.RecordTarget.fromAlias(
+        new targets.LoadBalancerTarget(this.service.loadBalancer),
+      ),
       stack,
       zone,
-      new targets.LoadBalancerTarget(this.service.loadBalancer),
-    )
+    })
   }
 }

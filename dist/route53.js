@@ -30,36 +30,15 @@ const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
  * Create A-record to any resource
  */
 class ARecord extends cdk.NestedStack {
-    constructor(scope, id, props, stack, zone, aliasTarget) {
+    constructor(scope, id, props) {
         super(scope, id, props);
-        const subDomain = new cdk.CfnParameter(this, 'subDomain', {
-            type: 'String',
-            description: 'Subdomain to map to this service',
-            default: '',
-        });
-        // Check if domain name given
-        const hasDomainName = new cdk.CfnCondition(this, 'HasDomainNameCondition', {
-            expression: cdk.Fn.conditionNot(cdk.Fn.conditionEquals(subDomain.valueAsString, '')),
-        });
-        const isBaseDomain = new cdk.CfnCondition(this, 'IsBaseDomainCondition', {
-            expression: cdk.Fn.conditionEquals(subDomain.valueAsString, ''),
-        });
+        const { subDomainIncludingDot = '', stack, zone, target } = props;
         // create A recordset alias targeting admin service's load balancer
-        const recordWithSubdomain = new route53.ARecord(this, stack.getResourceID('RecordsetWithSubdomain'), {
-            recordName: subDomain.valueAsString,
+        new route53.ARecord(this, stack.getResourceID('RecordSet'), {
+            recordName: `${subDomainIncludingDot}${zone.zoneName}`,
             zone,
-            target: { aliasTarget },
+            target,
         });
-        const cfnRecordWithSubdomain = recordWithSubdomain.node
-            .defaultChild;
-        cfnRecordWithSubdomain.cfnOptions.condition = hasDomainName;
-        // Different parameters if it's a base record
-        const record = new route53.ARecord(this, stack.getResourceID('Recordset'), {
-            zone,
-            target: { aliasTarget },
-        });
-        const cfnRecord = record.node.defaultChild;
-        cfnRecord.cfnOptions.condition = isBaseDomain;
     }
 }
 exports.ARecord = ARecord;
