@@ -119,7 +119,7 @@ export class BuildPipeline extends cdk.NestedStack {
       filters: [
         {
           jsonPath: '$.secret',
-          matchEquals: webhookAccessTokenSecret.toString(),
+          matchEquals: webhookAccessTokenSecret.unsafeUnwrap(),
         },
       ],
       targetAction: 'SourceAction',
