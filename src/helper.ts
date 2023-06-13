@@ -4,8 +4,10 @@ import {
   ResourceNotFoundException,
   SecretsManagerClient,
   UpdateSecretCommand,
+  SecretsManagerClientConfig,
 } from '@aws-sdk/client-secrets-manager'
-import { fromIni, fromEnv } from '@aws-sdk/credential-providers'
+import { fromEnv, fromIni } from '@aws-sdk/credential-providers'
+import { AwsCredentialIdentityProvider } from '@aws-sdk/types'
 import * as readline from 'readline'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -63,8 +65,11 @@ function prompt(query: string) {
  * Helper to load a credential for an sdk client
  *
  * @param ci
+ * @return AwsCredentialIdentityProvider
  */
-function getCredentials(ci = process.env.CI) {
+export const getCredentials = (
+  ci = process.env.CI,
+): AwsCredentialIdentityProvider => {
   if (ci) {
     return fromEnv()
   }
@@ -81,11 +86,11 @@ function getCredentials(ci = process.env.CI) {
  * @return SecretsManagerClient
  */
 export const generateSecretManager = (
-  region?: string,
+  configuration: SecretsManagerClientConfig,
 ): SecretsManagerClient => {
   return new SecretsManagerClient({
-    credentials: getCredentials(),
-    ...(region ? { region } : {}),
+    ...configuration,
+    credentials: configuration.credentials || getCredentials(),
   })
 }
 

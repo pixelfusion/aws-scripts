@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hydrateSecret = exports.generateSecretManager = exports.loadJsonFile = void 0;
+exports.hydrateSecret = exports.generateSecretManager = exports.getCredentials = exports.loadJsonFile = void 0;
 const client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
 const credential_providers_1 = require("@aws-sdk/credential-providers");
 const readline = __importStar(require("readline"));
@@ -71,24 +71,26 @@ function prompt(query) {
  * Helper to load a credential for an sdk client
  *
  * @param ci
+ * @return AwsCredentialIdentityProvider
  */
-function getCredentials(ci = process.env.CI) {
+const getCredentials = (ci = process.env.CI) => {
     if (ci) {
         return (0, credential_providers_1.fromEnv)();
     }
     return (0, credential_providers_1.fromIni)({
         mfaCodeProvider: async (serial) => await prompt(`Type the mfa token for the following account: ${serial}\n`),
     });
-}
+};
+exports.getCredentials = getCredentials;
 /**
  * Generate a secret manager client
  *
  * @return SecretsManagerClient
  */
-const generateSecretManager = (region) => {
+const generateSecretManager = (configuration) => {
     return new client_secrets_manager_1.SecretsManagerClient({
-        credentials: getCredentials(),
-        ...(region ? { region } : {}),
+        ...configuration,
+        credentials: configuration.credentials || (0, exports.getCredentials)(),
     });
 };
 exports.generateSecretManager = generateSecretManager;
