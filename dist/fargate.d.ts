@@ -9,13 +9,13 @@ import { StackConfig } from './configuration';
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
-export type TaskConfiguration = {
+export interface TaskConfiguration {
     memoryLimitMiB?: number;
     cpu?: number;
     desiredCount?: number;
     environment?: Record<string, string>;
     secrets?: Record<string, string>;
-};
+}
 /**
  * Generator for configuring ECS task definitions for a service
  */

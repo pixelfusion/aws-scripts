@@ -1,7 +1,7 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import { StackConfig } from './configuration';
-interface EcrRepositoryStackProps extends cdk.NestedStackProps {
+export interface EcrRepositoryStackProps extends cdk.NestedStackProps {
     stack: StackConfig;
     service: string;
 }
@@ -11,4 +11,3 @@ interface EcrRepositoryStackProps extends cdk.NestedStackProps {
 export declare class EcrRepositoryStack extends cdk.NestedStack {
     constructor(scope: Construct, id: string, props: EcrRepositoryStackProps);
 }
-export {};

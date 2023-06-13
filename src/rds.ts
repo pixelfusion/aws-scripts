@@ -7,7 +7,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53'
 import { StackConfig } from './configuration'
 import { ARecord } from './route53'
 
-interface PostgresInstanceProps extends cdk.NestedStackProps {
+export interface PostgresInstanceProps extends cdk.NestedStackProps {
   postgresFullVersion?: string
   postgresMajorVersion?: string
   stack: StackConfig
@@ -89,7 +89,8 @@ export class PostgresInstance extends cdk.NestedStack {
   }
 }
 
-interface PostgresInstanceWithBastionProps extends PostgresInstanceProps {
+export interface PostgresInstanceWithBastionProps
+  extends PostgresInstanceProps {
   bastionSubdomainIncludingDot?: string
   zone: route53.IHostedZone
 }

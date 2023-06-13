@@ -3,7 +3,7 @@ import * as cdk from 'aws-cdk-lib'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import { StackConfig } from './configuration'
 
-interface EcrRepositoryStackProps extends cdk.NestedStackProps {
+export interface EcrRepositoryStackProps extends cdk.NestedStackProps {
   stack: StackConfig
   service: string
 }

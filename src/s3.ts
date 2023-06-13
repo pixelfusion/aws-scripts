@@ -6,12 +6,12 @@ import { StackConfig } from './configuration'
 /**
  * Configuration options for bucket
  */
-enum BucketAccess {
+export enum BucketAccess {
   Public = 'Public',
   Private = 'Priavte',
 }
 
-interface S3BucketProps extends cdk.NestedStackProps {
+export interface S3BucketProps extends cdk.NestedStackProps {
   bucketName?: string
   publicPath?: string
   bucketAccess?: BucketAccess

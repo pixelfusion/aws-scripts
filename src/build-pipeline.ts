@@ -9,7 +9,7 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
 import * as iam from 'aws-cdk-lib/aws-iam'
 import { StackConfig } from './configuration'
 
-interface BuildPipelineProps extends cdk.NestedStackProps {
+export interface BuildPipelineProps extends cdk.NestedStackProps {
   githubRepositoryOwner: string
   githubRepositoryName: string
   githubBranchName: string

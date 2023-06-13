@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.S3Bucket = void 0;
+exports.S3Bucket = exports.BucketAccess = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const s3 = __importStar(require("aws-cdk-lib/aws-s3"));
 /**
@@ -33,7 +33,7 @@ var BucketAccess;
 (function (BucketAccess) {
     BucketAccess["Public"] = "Public";
     BucketAccess["Private"] = "Priavte";
-})(BucketAccess || (BucketAccess = {}));
+})(BucketAccess = exports.BucketAccess || (exports.BucketAccess = {}));
 /**
  * Generate an s3 bucket
  */

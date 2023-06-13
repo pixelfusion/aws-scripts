@@ -1,7 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { StackConfig } from './configuration';
-interface BuildPipelineProps extends cdk.NestedStackProps {
+export interface BuildPipelineProps extends cdk.NestedStackProps {
     githubRepositoryOwner: string;
     githubRepositoryName: string;
     githubBranchName: string;
@@ -28,4 +28,3 @@ interface BuildPipelineProps extends cdk.NestedStackProps {
 export declare class BuildPipeline extends cdk.NestedStack {
     constructor(scope: Construct, id: string, props: BuildPipelineProps);
 }
-export {};

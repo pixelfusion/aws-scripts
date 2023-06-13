@@ -14,7 +14,7 @@ import { ARecord } from './route53'
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
-export type TaskConfiguration = {
+export interface TaskConfiguration {
   memoryLimitMiB?: number
   cpu?: number
   desiredCount?: number

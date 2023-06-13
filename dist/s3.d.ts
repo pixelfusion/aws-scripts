@@ -5,11 +5,11 @@ import { StackConfig } from './configuration';
 /**
  * Configuration options for bucket
  */
-declare enum BucketAccess {
+export declare enum BucketAccess {
     Public = "Public",
     Private = "Priavte"
 }
-interface S3BucketProps extends cdk.NestedStackProps {
+export interface S3BucketProps extends cdk.NestedStackProps {
     bucketName?: string;
     publicPath?: string;
     bucketAccess?: BucketAccess;
@@ -22,4 +22,3 @@ export declare class S3Bucket extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     constructor(scope: Construct, id: string, props: S3BucketProps);
 }
-export {};
