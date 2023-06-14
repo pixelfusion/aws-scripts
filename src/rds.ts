@@ -12,7 +12,7 @@ export interface PostgresInstanceProps extends cdk.NestedStackProps {
   postgresMajorVersion?: string
   stack: StackConfig
   vpc: ec2.IVpc
-  removalPolicy: cdk.RemovalPolicy
+  removalPolicy?: cdk.RemovalPolicy
 }
 
 /**
