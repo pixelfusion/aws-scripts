@@ -12,6 +12,7 @@ export interface PostgresInstanceProps extends cdk.NestedStackProps {
   postgresMajorVersion?: string
   stack: StackConfig
   vpc: ec2.IVpc
+  removalPolicy: cdk.RemovalPolicy
 }
 
 /**
@@ -27,6 +28,7 @@ export class PostgresInstance extends cdk.NestedStack {
       postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
         .postgresFullVersion,
       postgresMajorVersion = '15',
+      removalPolicy = cdk.RemovalPolicy.SNAPSHOT,
       stack,
       vpc,
     } = props
@@ -84,7 +86,7 @@ export class PostgresInstance extends cdk.NestedStack {
       securityGroups: [dbSecurityGroup],
       credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
       deletionProtection: true,
-      removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
+      removalPolicy,
     })
   }
 }

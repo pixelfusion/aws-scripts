@@ -9,6 +9,7 @@ export interface PostgresInstanceProps extends cdk.NestedStackProps {
     postgresMajorVersion?: string;
     stack: StackConfig;
     vpc: ec2.IVpc;
+    removalPolicy: cdk.RemovalPolicy;
 }
 /**
  * Generate a postgres instance with secret keys and bastion server

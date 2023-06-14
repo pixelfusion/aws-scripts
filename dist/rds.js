@@ -37,7 +37,7 @@ class PostgresInstance extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
         const { postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
-            .postgresFullVersion, postgresMajorVersion = '15', stack, vpc, } = props;
+            .postgresFullVersion, postgresMajorVersion = '15', removalPolicy = cdk.RemovalPolicy.SNAPSHOT, stack, vpc, } = props;
         // Create postgres database secret
         const databaseCredentialsSecret = new ssm.Secret(this, stack.getResourceID('RdsCredentials'), {
             secretName: stack.getSecretName('RdsCredentials'),
@@ -71,7 +71,7 @@ class PostgresInstance extends cdk.NestedStack {
             securityGroups: [dbSecurityGroup],
             credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
             deletionProtection: true,
-            removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
+            removalPolicy,
         });
     }
 }

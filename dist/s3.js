@@ -40,7 +40,7 @@ var BucketAccess;
 class S3Bucket extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { bucketName, publicPath = '/*', bucketAccess = BucketAccess.Private, stack, removalPolicy = cdk.RemovalPolicy.RETAIN, } = props;
+        const { bucketName, publicPath = '/*', bucketAccess = BucketAccess.Private, stack, removalPolicy = cdk.RemovalPolicy.DESTROY, } = props;
         // Create base bucket
         this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
             removalPolicy,

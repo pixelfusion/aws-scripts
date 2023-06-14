@@ -32,7 +32,7 @@ export class S3Bucket extends cdk.NestedStack {
       publicPath = '/*',
       bucketAccess = BucketAccess.Private,
       stack,
-      removalPolicy = cdk.RemovalPolicy.RETAIN,
+      removalPolicy = cdk.RemovalPolicy.DESTROY,
     } = props
 
     // Create base bucket
