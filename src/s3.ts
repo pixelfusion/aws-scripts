@@ -16,6 +16,7 @@ export interface S3BucketProps extends cdk.NestedStackProps {
   publicPath?: string
   bucketAccess?: BucketAccess
   stack: StackConfig
+  removalPolicy?: cdk.RemovalPolicy
 }
 
 /**
@@ -31,11 +32,12 @@ export class S3Bucket extends cdk.NestedStack {
       publicPath = '/*',
       bucketAccess = BucketAccess.Private,
       stack,
+      removalPolicy = cdk.RemovalPolicy.RETAIN,
     } = props
 
     // Create base bucket
     this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      removalPolicy,
       publicReadAccess: false, // Note: Grant selective read on pattern after this
       bucketName,
       blockPublicAccess: {
