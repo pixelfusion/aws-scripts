@@ -25,11 +25,12 @@ export class PostgresInstance extends cdk.NestedStack {
     super(scope, id, props)
 
     const {
+      stack,
       postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
         .postgresFullVersion,
       postgresMajorVersion = '15',
-      removalPolicy = cdk.RemovalPolicy.SNAPSHOT,
-      stack,
+      // RDS should snapshot by default
+      removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT),
       vpc,
     } = props
 

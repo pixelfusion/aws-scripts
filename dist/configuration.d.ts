@@ -10,6 +10,7 @@ export interface StackProps extends Record<string, any> {
     slug?: string;
     account_id?: string;
     region?: string;
+    removal_policy?: cdk.RemovalPolicy | null;
 }
 /**
  * Represents a single stack in an environment
@@ -93,6 +94,11 @@ export declare class StackConfig {
      * @return {string} value of this property
      */
     getProperty: (name: string, default_value?: undefined | string) => string;
+    /**
+     * Get the standard removal policy for this tack
+     * @param default_value
+     */
+    getRemovalPolicy: (default_value?: cdk.RemovalPolicy) => cdk.RemovalPolicy;
     /**
      * Get build environment required by an CDK stack
      *
@@ -202,6 +208,10 @@ export declare class Stage {
      * Get ID for this stage
      */
     getId: () => string;
+    /**
+     * Get stage props
+     */
+    getProps: () => StageProps;
     /**
      * Main slug to identify this stack by. Used for ECR and secret prefixes.
      */

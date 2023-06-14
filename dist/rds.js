@@ -36,8 +36,10 @@ const route53_1 = require("./route53");
 class PostgresInstance extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
-            .postgresFullVersion, postgresMajorVersion = '15', removalPolicy = cdk.RemovalPolicy.SNAPSHOT, stack, vpc, } = props;
+        const { stack, postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
+            .postgresFullVersion, postgresMajorVersion = '15', 
+        // RDS should snapshot by default
+        removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT), vpc, } = props;
         // Create postgres database secret
         const databaseCredentialsSecret = new ssm.Secret(this, stack.getResourceID('RdsCredentials'), {
             secretName: stack.getSecretName('RdsCredentials'),

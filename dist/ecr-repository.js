@@ -32,7 +32,9 @@ const ecr = __importStar(require("aws-cdk-lib/aws-ecr"));
 class EcrRepositoryStack extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { stack, service, removalPolicy = cdk.RemovalPolicy.DESTROY } = props;
+        const { stack, service, 
+        // ECR can normally be destroyed by default
+        removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.DESTROY), } = props;
         // Create an ECR repositories
         const slug = stack.getSlug().toLowerCase();
         const repositoryName = `${slug}/${service.toLowerCase()}`;

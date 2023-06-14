@@ -16,7 +16,12 @@ export class EcrRepositoryStack extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: EcrRepositoryStackProps) {
     super(scope, id, props)
 
-    const { stack, service, removalPolicy = cdk.RemovalPolicy.DESTROY } = props
+    const {
+      stack,
+      service,
+      // ECR can normally be destroyed by default
+      removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.DESTROY),
+    } = props
 
     // Create an ECR repositories
     const slug = stack.getSlug().toLowerCase()

@@ -11,6 +11,7 @@ export interface StackProps extends Record<string, any> {
   slug?: string
   account_id?: string
   region?: string
+  removal_policy?: cdk.RemovalPolicy | null
 }
 
 /**
@@ -21,8 +22,8 @@ export class StackConfig {
    * ID of this stack
    * @private
    */
-
   private readonly id: string
+
   /**
    * Parent stage to inherit configuration from
    * @private
@@ -132,11 +133,25 @@ export class StackConfig {
   ): string => {
     // Look up stack-specific property, failing over to stage if not overridden for this stack
     const value =
-      this.stack?.[name] || this.stage.getProperty(name) || default_value
+      this.stack?.[name] ?? this.stage.getProperty(name) ?? default_value
     if (value) {
       return value
     }
     throw new Error(`Missing value ${name} for stack`)
+  }
+
+  /**
+   * Get the standard removal policy for this tack
+   * @param default_value
+   */
+  getRemovalPolicy = (
+    default_value: cdk.RemovalPolicy = cdk.RemovalPolicy.RETAIN,
+  ): cdk.RemovalPolicy => {
+    return (
+      this.stack.removal_policy ??
+      this.stage.getProps().removal_policy ??
+      default_value
+    )
   }
 
   /**
@@ -292,6 +307,13 @@ export class Stage {
    */
   getId = (): string => {
     return this.id
+  }
+
+  /**
+   * Get stage props
+   */
+  getProps = (): StageProps => {
+    return this.stage
   }
 
   /**
