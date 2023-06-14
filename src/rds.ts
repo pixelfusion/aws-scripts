@@ -86,7 +86,7 @@ export class PostgresInstance extends cdk.NestedStack {
       maxAllocatedStorage: 200,
       securityGroups: [dbSecurityGroup],
       credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
-      deletionProtection: true,
+      deletionProtection: removalPolicy === cdk.RemovalPolicy.RETAIN,
       removalPolicy,
     })
   }
