@@ -6,6 +6,7 @@ import { StackConfig } from './configuration'
 export interface EcrRepositoryStackProps extends cdk.NestedStackProps {
   stack: StackConfig
   service: string
+  removalPolicy?: cdk.RemovalPolicy
 }
 
 /**
@@ -15,7 +16,7 @@ export class EcrRepositoryStack extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: EcrRepositoryStackProps) {
     super(scope, id, props)
 
-    const { stack, service } = props
+    const { stack, service, removalPolicy = cdk.RemovalPolicy.DESTROY } = props
 
     // Create an ECR repositories
     const slug = stack.getSlug().toLowerCase()
@@ -25,6 +26,7 @@ export class EcrRepositoryStack extends cdk.NestedStack {
       stack.getResourceID(`${service}ECRRepository`),
       {
         repositoryName,
+        removalPolicy,
       },
     )
     repository.addLifecycleRule({

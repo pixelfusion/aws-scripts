@@ -6,6 +6,8 @@ import * as iam from 'aws-cdk-lib/aws-iam'
  * Stack to generate a GitHub deployer, along with key and secret for loading into GitHub secrets
  */
 export class GithubDeployStack extends cdk.NestedStack {
+  public readonly githubActionsUserAccessKey: iam.CfnAccessKey
+
   constructor(scope: Construct, id: string, props: cdk.NestedStackProps) {
     super(scope, id, props)
 
@@ -33,7 +35,7 @@ export class GithubDeployStack extends cdk.NestedStack {
     )
 
     // Create access key for the user
-    const githubActionsUserAccessKey = new iam.CfnAccessKey(
+    this.githubActionsUserAccessKey = new iam.CfnAccessKey(
       this,
       'GithubActionsUserAccessKey',
       {
@@ -48,12 +50,12 @@ export class GithubDeployStack extends cdk.NestedStack {
 
     new cdk.CfnOutput(this, 'GithubUserAccessKeyID', {
       description: `Value of AWS_ACCESS_KEY_ID for github secrets`,
-      value: githubActionsUserAccessKey.ref,
+      value: this.githubActionsUserAccessKey.ref,
     })
 
     new cdk.CfnOutput(this, 'GithubUserSecretAccessKey', {
       description: `Value of AWS_SECRET_ACCESS_KEY for github secrets`,
-      value: githubActionsUserAccessKey.attrSecretAccessKey,
+      value: this.githubActionsUserAccessKey.attrSecretAccessKey,
     })
   }
 }

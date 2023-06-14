@@ -51,7 +51,7 @@ class GithubDeployStack extends cdk.NestedStack {
             document: adminPolicy,
         }));
         // Create access key for the user
-        const githubActionsUserAccessKey = new iam.CfnAccessKey(this, 'GithubActionsUserAccessKey', {
+        this.githubActionsUserAccessKey = new iam.CfnAccessKey(this, 'GithubActionsUserAccessKey', {
             userName: githubDeployUser.userName,
         });
         new cdk.CfnOutput(this, 'StackName', {
@@ -60,11 +60,11 @@ class GithubDeployStack extends cdk.NestedStack {
         });
         new cdk.CfnOutput(this, 'GithubUserAccessKeyID', {
             description: `Value of AWS_ACCESS_KEY_ID for github secrets`,
-            value: githubActionsUserAccessKey.ref,
+            value: this.githubActionsUserAccessKey.ref,
         });
         new cdk.CfnOutput(this, 'GithubUserSecretAccessKey', {
             description: `Value of AWS_SECRET_ACCESS_KEY for github secrets`,
-            value: githubActionsUserAccessKey.attrSecretAccessKey,
+            value: this.githubActionsUserAccessKey.attrSecretAccessKey,
         });
     }
 }

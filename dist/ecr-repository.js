@@ -32,12 +32,13 @@ const ecr = __importStar(require("aws-cdk-lib/aws-ecr"));
 class EcrRepositoryStack extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { stack, service } = props;
+        const { stack, service, removalPolicy = cdk.RemovalPolicy.DESTROY } = props;
         // Create an ECR repositories
         const slug = stack.getSlug().toLowerCase();
         const repositoryName = `${slug}/${service.toLowerCase()}`;
         const repository = new ecr.Repository(this, stack.getResourceID(`${service}ECRRepository`), {
             repositoryName,
+            removalPolicy,
         });
         repository.addLifecycleRule({
             description: 'Expire images older than 14 days',

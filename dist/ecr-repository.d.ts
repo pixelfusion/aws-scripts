@@ -4,6 +4,7 @@ import { StackConfig } from './configuration';
 export interface EcrRepositoryStackProps extends cdk.NestedStackProps {
     stack: StackConfig;
     service: string;
+    removalPolicy?: cdk.RemovalPolicy;
 }
 /**
  * Creates an ECR repository for uploading docker images to
