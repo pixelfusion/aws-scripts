@@ -14,6 +14,7 @@ export interface S3BucketProps extends cdk.NestedStackProps {
     publicPath?: string;
     bucketAccess?: BucketAccess;
     stack: StackConfig;
+    removalPolicy?: cdk.RemovalPolicy;
 }
 /**
  * Generate an s3 bucket
