@@ -32,6 +32,9 @@ const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
 const route53_1 = require("./route53");
+// Default docker image to use
+const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
+const DEFAULT_VERSION = 'default';
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
@@ -39,7 +42,7 @@ const route53_1 = require("./route53");
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
+        const { healthCheckPath = '/health-check', imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -53,6 +56,10 @@ class FargateService extends cdk.NestedStack {
                 }
             }
         }
+        // Pick image
+        const image = imageVersion === DEFAULT_VERSION
+            ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
+            : ecs.ContainerImage.fromEcrRepository(repository, imageVersion);
         this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
             cluster: cluster,
             certificate: certificate,
@@ -61,7 +68,7 @@ class FargateService extends cdk.NestedStack {
             cpu: taskConfiguration?.cpu || 256,
             desiredCount: taskConfiguration?.desiredCount || 1,
             taskImageOptions: {
-                image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion),
+                image,
                 environment: taskConfiguration?.environment || {},
                 secrets,
             },

@@ -23,7 +23,11 @@ export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) 
 interface FargateServiceProps extends cdk.NestedStackProps {
     subDomainIncludingDot?: string;
     healthCheckPath?: string;
-    imageVersion?: string;
+    /**
+     * Set to "default" to run a default image instead of
+     * using the provided repository
+     */
+    imageVersion?: string | 'default';
     stack: StackConfig;
     cluster: ecs.ICluster;
     certificate: acm.ICertificate;

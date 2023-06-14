@@ -11,6 +11,11 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets'
 import { StackConfig } from './configuration'
 import { ARecord } from './route53'
 
+// Default docker image to use
+const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
+
+const DEFAULT_VERSION = 'default'
+
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
@@ -33,7 +38,11 @@ export type EnvFactory = (
 interface FargateServiceProps extends cdk.NestedStackProps {
   subDomainIncludingDot?: string
   healthCheckPath?: string
-  imageVersion?: string
+  /**
+   * Set to "default" to run a default image instead of
+   * using the provided repository
+   */
+  imageVersion?: string | 'default'
   stack: StackConfig
   cluster: ecs.ICluster
   certificate: acm.ICertificate
@@ -54,7 +63,7 @@ export class FargateService extends cdk.NestedStack {
 
     const {
       healthCheckPath = '/health-check',
-      imageVersion = 'latest',
+      imageVersion = DEFAULT_VERSION,
       subDomainIncludingDot = '',
       stack,
       cluster,
@@ -82,6 +91,12 @@ export class FargateService extends cdk.NestedStack {
       }
     }
 
+    // Pick image
+    const image =
+      imageVersion === DEFAULT_VERSION
+        ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
+        : ecs.ContainerImage.fromEcrRepository(repository, imageVersion)
+
     this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(
       this,
       stack.getResourceID('AdminService'),
@@ -93,7 +108,7 @@ export class FargateService extends cdk.NestedStack {
         cpu: taskConfiguration?.cpu || 256,
         desiredCount: taskConfiguration?.desiredCount || 1,
         taskImageOptions: {
-          image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion),
+          image,
           environment: taskConfiguration?.environment || {},
           secrets,
         },
