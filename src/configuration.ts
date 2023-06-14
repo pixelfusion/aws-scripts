@@ -1,11 +1,4 @@
-import * as cdk from 'aws-cdk-lib';
-
-/**
- * Allows you to type nested stack props
- */
-export interface NestedStackProps<T extends object = {}> extends cdk.NestedStackProps {
-  readonly parameters?: T & Record<string, string>
-}
+import * as cdk from 'aws-cdk-lib'
 
 /**
  * Props required for a single stack. slug, account_id and region need to be declared
@@ -14,23 +7,23 @@ export interface NestedStackProps<T extends object = {}> extends cdk.NestedStack
  * Note that stack con contain multiple services, and most projects only have a single stack.
  */
 export interface StackProps extends Record<string, any> {
-  name: string,
-  slug?: string,
-  account_id?: string,
-  region?: string,
+  name: string
+  slug?: string
+  account_id?: string
+  region?: string
+  removal_policy?: cdk.RemovalPolicy | null
 }
 
 /**
  * Represents a single stack in an environment
  */
 export class StackConfig {
-
   /**
    * ID of this stack
    * @private
    */
-
   private readonly id: string
+
   /**
    * Parent stage to inherit configuration from
    * @private
@@ -52,8 +45,8 @@ export class StackConfig {
    */
   constructor(id: string, stage: Stage, stack: StackProps) {
     this.id = id
-    this.stage = stage;
-    this.stack = stack;
+    this.stage = stage
+    this.stack = stack
   }
 
   /**
@@ -69,7 +62,7 @@ export class StackConfig {
    * @return {string} slug
    */
   getSlug = (): string => {
-    return this.getProperty('slug');
+    return this.getProperty('slug')
   }
 
   /**
@@ -78,7 +71,7 @@ export class StackConfig {
    * @return {string} account ID
    */
   getAccountId = (): string => {
-    return this.getProperty('account_id');
+    return this.getProperty('account_id')
   }
 
   /**
@@ -87,9 +80,8 @@ export class StackConfig {
    * @return {string} Region
    */
   getRegion = (): string => {
-    return this.getProperty('region');
+    return this.getProperty('region')
   }
-
 
   /**
    * Get human-readable name for this stack
@@ -97,7 +89,7 @@ export class StackConfig {
    * @return {string} name of this tack
    */
   getStackName = (): string => {
-    return this.stack.name;
+    return this.stack.name
   }
 
   /**
@@ -106,7 +98,7 @@ export class StackConfig {
    * @return {Stage}
    */
   getStage = (): Stage => {
-    return this.stage;
+    return this.stage
   }
 
   /**
@@ -115,7 +107,7 @@ export class StackConfig {
    * @return {string} name of this stage
    */
   getStageName = (): string => {
-    return this.stage.getStageName();
+    return this.stage.getStageName()
   }
 
   /**
@@ -124,7 +116,7 @@ export class StackConfig {
    * @return {string} id of this stage
    */
   getStageId = (): string => {
-    return this.stage.getId();
+    return this.stage.getId()
   }
 
   /**
@@ -135,13 +127,31 @@ export class StackConfig {
    * @param {string|undefined} default_value If default value is omitted, this value is mandatory.
    * @return {string} value of this property
    */
-  getProperty = (name: string, default_value: undefined | string = undefined): string => {
+  getProperty = (
+    name: string,
+    default_value: undefined | string = undefined,
+  ): string => {
     // Look up stack-specific property, failing over to stage if not overridden for this stack
-    const value = this.stack?.[name] || this.stage.getProperty(name) || default_value
+    const value =
+      this.stack?.[name] ?? this.stage.getProperty(name) ?? default_value
     if (value) {
       return value
     }
-    throw new Error(`Missing value ${ name } for stack`)
+    throw new Error(`Missing value ${name} for stack`)
+  }
+
+  /**
+   * Get the standard removal policy for this tack
+   * @param default_value
+   */
+  getRemovalPolicy = (
+    default_value: cdk.RemovalPolicy = cdk.RemovalPolicy.RETAIN,
+  ): cdk.RemovalPolicy => {
+    return (
+      this.stack.removal_policy ??
+      this.stage.getProps().removal_policy ??
+      default_value
+    )
   }
 
   /**
@@ -163,8 +173,8 @@ export class StackConfig {
    */
   getStackProps = (): cdk.StackProps => {
     return {
-      env: this.getEnvironment()
-    };
+      env: this.getEnvironment(),
+    }
   }
 
   /**
@@ -175,7 +185,7 @@ export class StackConfig {
    * @return {string} Full ID for this resource
    */
   getFullResourceId = (name: string): string => {
-    return `${ this.getBaseResourceId() }-${ name }`;
+    return `${this.getBaseResourceId()}-${name}`
   }
 
   /**
@@ -186,7 +196,7 @@ export class StackConfig {
    * @return {String} an export
    */
   getStackExportId = (name: string): string => {
-    return `${ this.getSlug() }-${ this.getStageName() }-${ name }`;
+    return `${this.getSlug()}-${this.getStageId()}-${name}`
   }
 
   /**
@@ -195,7 +205,7 @@ export class StackConfig {
    * @eturn {string}
    */
   getBaseResourceId = (): string => {
-    return `${ this.getSlug() }-${ this.getStageName() }-${ this.getStackName() }`;
+    return `${this.getSlug()}-${this.getStageId()}-${this.getId()}`
   }
 
   /**
@@ -209,7 +219,7 @@ export class StackConfig {
    * @return {string} Full ARN for this secret
    */
   getSecretArn = (name: string, key: string): string => {
-    return `${ this.getSecretBaseArn() }/${ name }:${ key }::`;
+    return `${this.getSecretBaseArn()}/${name}:${key}::`
   }
 
   /**
@@ -222,7 +232,7 @@ export class StackConfig {
    * @return {string} Partial ARN for secrets
    */
   getSecretBaseArn = (): string => {
-    return `${ this.getBaseArn('secretsmanager') }:secret:${ this.getSlug() }`
+    return `${this.getBaseArn('secretsmanager')}:secret:${this.getSlug()}`
   }
 
   /**
@@ -234,7 +244,7 @@ export class StackConfig {
    * @return {string}
    */
   getSecretName = (name: string): string => {
-    return `${ this.getSlug() }/${ name }`;
+    return `${this.getSlug()}/${name}`
   }
 
   /**
@@ -247,7 +257,7 @@ export class StackConfig {
    * @return {string} Base ARN for this service
    */
   getBaseArn = (service: string): string => {
-    return `arn:aws:${ service }:${ this.getRegion() }:${ this.getAccountId() }`;
+    return `arn:aws:${service}:${this.getRegion()}:${this.getAccountId()}`
   }
 
   /**
@@ -258,7 +268,7 @@ export class StackConfig {
    * @return {string}
    */
   getResourceID = (name: string): string => {
-    return name.replace(/[^A-Za-z0-9-]/gi, '-');
+    return name.replace(/[^A-Za-z0-9-]/gi, '-')
   }
 }
 
@@ -274,7 +284,6 @@ export interface StageProps extends StackProps {
  * E.g. "UAT".
  */
 export class Stage {
-
   /**
    * ID of this stage
    * @private
@@ -286,11 +295,11 @@ export class Stage {
    * Stage props
    * @private
    */
-  private readonly stage: StageProps;
+  private readonly stage: StageProps
 
   constructor(id: string, stage: StageProps) {
-    this.id = id;
-    this.stage = stage;
+    this.id = id
+    this.stage = stage
   }
 
   /**
@@ -298,6 +307,13 @@ export class Stage {
    */
   getId = (): string => {
     return this.id
+  }
+
+  /**
+   * Get stage props
+   */
+  getProps = (): StageProps => {
+    return this.stage
   }
 
   /**
@@ -311,7 +327,7 @@ export class Stage {
    * Get human-readable name for this stage
    */
   getStageName = (): string => {
-    return this.stage.name;
+    return this.stage.name
   }
 
   /**
@@ -331,8 +347,8 @@ export class Stage {
   getStack = (id: string): StackConfig => {
     const stackProps = this.stage.stacks?.[id]
     if (!stackProps) {
-      throw new Error(`Invalid stack ${ id }`);
+      throw new Error(`Invalid stack ${id}`)
     }
-    return new StackConfig(id, this, stackProps);
+    return new StackConfig(id, this, stackProps)
   }
 }

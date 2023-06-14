@@ -25,41 +25,33 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostgresInstanceWithBastion = exports.PostgresInstance = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
-const aws_cdk_lib_1 = require("aws-cdk-lib");
 const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
 const ssm = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
 const rds = __importStar(require("aws-cdk-lib/aws-rds"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
+const route53_1 = require("./route53");
 /**
  * Generate a postgres instance with secret keys and bastion server
  */
 class PostgresInstance extends cdk.NestedStack {
-    constructor(scope, id, props, 
-    // Postgres instance
-    stack, vpc) {
+    constructor(scope, id, props) {
         super(scope, id, props);
-        const postgresFullVersion = new cdk.CfnParameter(this, 'postgresFullVersion', {
-            type: 'String',
-            description: 'Postgres engine full version',
-            default: rds.PostgresEngineVersion.VER_15_2.postgresFullVersion,
-        });
-        const postgresMajorVersion = new cdk.CfnParameter(this, 'postgresMajorVersion', {
-            type: 'String',
-            description: 'Postgres engine major version. This should match the full version',
-            default: '15',
-        });
+        const { stack, postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
+            .postgresFullVersion, postgresMajorVersion = '15', 
+        // RDS should snapshot by default
+        removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT), vpc, } = props;
         // Create postgres database secret
         const databaseCredentialsSecret = new ssm.Secret(this, stack.getResourceID('RdsCredentials'), {
             secretName: stack.getSecretName('RdsCredentials'),
             generateSecretString: {
                 secretStringTemplate: JSON.stringify({
-                    username: 'master'
+                    username: 'master',
                 }),
                 excludePunctuation: true,
                 passwordLength: 30,
                 includeSpace: false,
-                generateStringKey: 'password'
-            }
+                generateStringKey: 'password',
+            },
         });
         // Create a security group for the database
         const dbSecurityGroup = new ec2.SecurityGroup(this, stack.getResourceID('DatabaseSecurityGroup'), {
@@ -71,7 +63,7 @@ class PostgresInstance extends cdk.NestedStack {
         const rdsInstanceId = `${stack.getFullResourceId('RdsInstance')}`;
         this.rdsInstance = new rds.DatabaseInstance(this, rdsInstanceId, {
             engine: rds.DatabaseInstanceEngine.postgres({
-                version: rds.PostgresEngineVersion.of(postgresFullVersion.valueAsString, postgresMajorVersion.valueAsString)
+                version: rds.PostgresEngineVersion.of(postgresFullVersion, postgresMajorVersion),
             }),
             instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
             vpc: vpc,
@@ -80,8 +72,8 @@ class PostgresInstance extends cdk.NestedStack {
             maxAllocatedStorage: 200,
             securityGroups: [dbSecurityGroup],
             credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
-            deletionProtection: true,
-            removalPolicy: aws_cdk_lib_1.RemovalPolicy.SNAPSHOT,
+            deletionProtection: removalPolicy === cdk.RemovalPolicy.RETAIN,
+            removalPolicy,
         });
     }
 }
@@ -90,15 +82,9 @@ exports.PostgresInstance = PostgresInstance;
  * RDS instance with bastion
  */
 class PostgresInstanceWithBastion extends PostgresInstance {
-    constructor(scope, id, props, 
-    // Postgres instance
-    stack, vpc, zone) {
-        super(scope, id, props, stack, vpc);
-        const bastionSubdomain = new cdk.CfnParameter(this, 'bastionSubdomain', {
-            type: 'String',
-            description: 'Subdomain for hostname',
-            default: 'ssh',
-        });
+    constructor(scope, id, props) {
+        super(scope, id, props);
+        const { stack, vpc, zone, bastionSubdomainIncludingDot = 'bastion.', } = props;
         // Create a security group for the bastion host
         const bastionSecurityGroup = new ec2.SecurityGroup(this, stack.getResourceID('BastionSecurityGroup'), {
             vpc,
@@ -108,7 +94,7 @@ class PostgresInstanceWithBastion extends PostgresInstance {
         // Create a key pair
         const key = new ec2.CfnKeyPair(this, stack.getResourceID('BastionKeyPair'), {
             keyName: stack.getFullResourceId('BastionKeyPair'),
-            keyType: 'ed25519'
+            keyType: 'ed25519',
         });
         // Create the bastion host
         const bastion = new ec2.Instance(this, stack.getResourceID('BastionHost'), {
@@ -119,7 +105,7 @@ class PostgresInstanceWithBastion extends PostgresInstance {
             vpcSubnets: {
                 subnetType: ec2.SubnetType.PUBLIC,
             },
-            keyName: key.keyName
+            keyName: key.keyName,
         });
         bastion.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH access from the internet');
         // Allow the bastion host to connect to the database
@@ -132,10 +118,11 @@ class PostgresInstanceWithBastion extends PostgresInstance {
             instanceId: bastion.instanceId,
         });
         // Create hostname for ssh. for bastion
-        new route53.ARecord(this, stack.getResourceID('BastionRecordSet'), {
-            recordName: bastionSubdomain.valueAsString,
-            zone: zone,
+        new route53_1.ARecord(this, stack.getResourceID('BastionRecordSet'), {
+            subDomainIncludingDot: bastionSubdomainIncludingDot,
             target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
+            stack,
+            zone,
         });
     }
 }

@@ -1,107 +1,121 @@
-import { Construct } from 'constructs';
-import * as cdk from 'aws-cdk-lib';
-import * as ecs from "aws-cdk-lib/aws-ecs";
-import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
-import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as ssm from 'aws-cdk-lib/aws-secretsmanager';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as targets from 'aws-cdk-lib/aws-route53-targets';
-import { NestedStackProps, StackConfig } from './configuration';
+import { Construct } from 'constructs'
+import * as cdk from 'aws-cdk-lib'
+import * as ecs from 'aws-cdk-lib/aws-ecs'
+import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
+import * as ssm from 'aws-cdk-lib/aws-secretsmanager'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as acm from 'aws-cdk-lib/aws-certificatemanager'
+import * as route53 from 'aws-cdk-lib/aws-route53'
+import * as targets from 'aws-cdk-lib/aws-route53-targets'
+import { StackConfig } from './configuration'
+import { ARecord } from './route53'
+
+// Default docker image to use
+const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
+
+const DEFAULT_VERSION = 'default'
 
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
-export type TaskConfiguration = {
-  memoryLimitMiB?: number,
-  cpu?: number,
-  desiredCount?: number,
-  environment?: Record<string, string>,
-  secrets?: Record<string, string>,
+export interface TaskConfiguration {
+  memoryLimitMiB?: number
+  cpu?: number
+  desiredCount?: number
+  environment?: Record<string, string>
+  secrets?: Record<string, string>
 }
 
 /**
  * Generator for configuring ECS task definitions for a service
  */
-export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) => TaskConfiguration
+export type EnvFactory = (
+  stack: StackConfig,
+  defaults: Record<string, string>,
+) => TaskConfiguration
+
+interface FargateServiceProps extends cdk.NestedStackProps {
+  subDomainIncludingDot?: string
+  healthCheckPath?: string
+  /**
+   * Set to "default" to run a default image instead of
+   * using the provided repository
+   */
+  imageVersion?: string | 'default'
+  stack: StackConfig
+  cluster: ecs.ICluster
+  certificate: acm.ICertificate
+  zone: route53.IHostedZone
+  repository: ecr.IRepository
+  taskConfiguration: TaskConfiguration
+}
 
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
  */
 export class FargateService extends cdk.NestedStack {
-
   public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService
 
-  constructor(
-    scope: Construct,
-    id: string,
-    props: NestedStackProps<{
-      subDomain?: string,
-      healthCheckPath?: string,
-      imageVersion?: string,
-    }>,
-    stack: StackConfig,
-    cluster: ecs.ICluster,
-    certificate: acm.ICertificate,
-    zone: route53.IHostedZone,
-    repository: ecr.IRepository,
-    taskConfiguration: TaskConfiguration,
-  ) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, props: FargateServiceProps) {
+    super(scope, id, props)
 
-    const subDomain = new cdk.CfnParameter(this, 'subDomain', {
-      type: 'String',
-      description: 'Subdomain to map to this service',
-      default: '',
-    });
-
-    const healthCheckPath = new cdk.CfnParameter(this, 'healthCheckPath', {
-      type: 'String',
-      description: 'Path to health check url',
-      default: '/health-check',
-    })
-
-    const imageVersion = new cdk.CfnParameter(this, 'imageVersion', {
-      type: 'String',
-      description: 'Docker image version to use',
-      default: 'latest',
-    })
+    const {
+      healthCheckPath = '/health-check',
+      imageVersion = DEFAULT_VERSION,
+      subDomainIncludingDot = '',
+      stack,
+      cluster,
+      certificate,
+      zone,
+      repository,
+      taskConfiguration,
+    } = props
 
     // Compile secrets into list of mapped ecs.Secrets
-    const secrets: { [key: string]: ecs.Secret } = {};
+    const secrets: { [key: string]: ecs.Secret } = {}
     const secretValues = taskConfiguration.secrets
     if (secretValues) {
-      for (const [ secretKey, value ] of Object.entries(secretValues)) {
+      for (const [secretKey, value] of Object.entries(secretValues)) {
         if (value) {
           // Convert from json string to ecs.Secret
-          const [ secretName, fieldName ] = value.split(':').slice(0, 2)
+          const [secretName, fieldName] = value.split(':').slice(0, 2)
           const secret = ssm.Secret.fromSecretNameV2(
             this,
             secretKey,
-            secretName
+            secretName,
           )
           secrets[secretKey] = ecs.Secret.fromSecretsManager(secret, fieldName)
         }
       }
     }
 
-    this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID("AdminService"), {
-      cluster: cluster,
-      certificate: certificate,
-      redirectHTTP: true,
-      memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
-      cpu: taskConfiguration?.cpu || 256,
-      desiredCount: taskConfiguration?.desiredCount || 1,
-      taskImageOptions: {
-        image: ecs.ContainerImage.fromEcrRepository(repository, imageVersion.valueAsString),
-        environment: taskConfiguration?.environment || {},
-        secrets,
-      },
-    });
+    // Pick image
+    const image =
+      imageVersion === DEFAULT_VERSION
+        ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
+        : ecs.ContainerImage.fromEcrRepository(repository, imageVersion)
 
-    const taskDefinition = this.service.taskDefinition;
+    this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(
+      this,
+      stack.getResourceID('AdminService'),
+      {
+        cluster: cluster,
+        certificate: certificate,
+        redirectHTTP: true,
+        memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
+        cpu: taskConfiguration?.cpu || 256,
+        desiredCount: taskConfiguration?.desiredCount || 1,
+        taskImageOptions: {
+          image,
+          environment: taskConfiguration?.environment || {},
+          secrets,
+        },
+      },
+    )
+
+    const taskDefinition = this.service.taskDefinition
 
     taskDefinition.addToExecutionRolePolicy(
       new iam.PolicyStatement({
@@ -109,65 +123,33 @@ export class FargateService extends cdk.NestedStack {
           'ecr:GetAuthorizationToken',
           'ecr:BatchCheckLayerAvailability',
           'ecr:GetDownloadUrlForLayer',
-          'ecr:BatchGetImage'
+          'ecr:BatchGetImage',
         ],
-        resources: [ repository.repositoryArn ],
-      })
-    );
+        resources: [repository.repositoryArn],
+      }),
+    )
 
     // Allow secrets
     taskDefinition.addToExecutionRolePolicy(
       new iam.PolicyStatement({
-        actions: [ "secretsmanager:GetSecretValue" ],
-        resources: [ `${ stack.getSecretBaseArn() }/*` ],
-      })
-    );
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [`${stack.getSecretBaseArn()}/*`],
+      }),
+    )
 
     // Health check
     this.service.targetGroup.configureHealthCheck({
-      path: healthCheckPath.valueAsString
-    });
+      path: healthCheckPath,
+    })
 
-    // Check if domain name given
-    const hasDomainName = new cdk.CfnCondition(
-      this,
-      'HasDomainNameCondition',
-      {
-        expression: cdk.Fn.conditionNot(
-          cdk.Fn.conditionEquals(subDomain.valueAsString, '')
-        )
-      }
-    )
-
-    const isBaseDomain = new cdk.CfnCondition(
-      this,
-      'IsBaseDomainCondition',
-      {
-        expression: cdk.Fn.conditionEquals(subDomain.valueAsString, '')
-      }
-    )
-
-    // create A recordset alias targeting admin service's load balancer
-    const recordWithSubdomain = new route53.ARecord(this, stack.getResourceID('RecordsetWithSubdomain'), {
-      recordName: subDomain.valueAsString,
+    // Alias
+    new ARecord(this, stack.getResourceID('Record'), {
+      subDomainIncludingDot,
+      target: route53.RecordTarget.fromAlias(
+        new targets.LoadBalancerTarget(this.service.loadBalancer),
+      ),
+      stack,
       zone,
-      target: {
-        aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
-      }
-    });
-
-    const cfnRecordWithSubdomain = recordWithSubdomain.node.defaultChild as route53.CfnRecordSet;
-    cfnRecordWithSubdomain.cfnOptions.condition = hasDomainName;
-
-    // Different parameters if it's a base record
-    const record = new route53.ARecord(this, stack.getResourceID('Recordset'), {
-      zone,
-      target: {
-        aliasTarget: new targets.LoadBalancerTarget(this.service.loadBalancer)
-      }
-    });
-
-    const cfnRecord = record.node.defaultChild as route53.CfnRecordSet;
-    cfnRecord.cfnOptions.condition = isBaseDomain;
+    })
   }
 }

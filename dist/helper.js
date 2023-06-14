@@ -23,7 +23,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadJsonFile = void 0;
+exports.hydrateSecret = exports.generateSecretManager = exports.getCredentials = exports.loadJsonFile = void 0;
+const client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
+const credential_providers_1 = require("@aws-sdk/credential-providers");
+const readline = __importStar(require("readline"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 /**
@@ -41,3 +44,112 @@ const loadJsonFile = (dirname, relativePath) => {
     return JSON.parse(jsonData);
 };
 exports.loadJsonFile = loadJsonFile;
+/**
+ * Check if the given error is a ResourceNotFoundException
+ *
+ * @param error
+ * @return bool
+ */
+function isResourceNotFoundError(error) {
+    return !!(error &&
+        typeof error === 'object' &&
+        'name' in error &&
+        error.name === 'ResourceNotFoundException');
+}
+// Helper function for node-js
+function prompt(query) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    return new Promise((resolve) => rl.question(query, (ans) => {
+        rl.close();
+        resolve(ans);
+    }));
+}
+/**
+ * Helper to load a credential for an sdk client
+ *
+ * @param ci
+ * @return AwsCredentialIdentityProvider
+ */
+const getCredentials = (ci = process.env.CI) => {
+    if (ci) {
+        return (0, credential_providers_1.fromEnv)();
+    }
+    return (0, credential_providers_1.fromIni)({
+        mfaCodeProvider: async (serial) => await prompt(`Type the mfa token for the following account: ${serial}\n`),
+    });
+};
+exports.getCredentials = getCredentials;
+/**
+ * Generate a secret manager client
+ *
+ * @return SecretsManagerClient
+ */
+const generateSecretManager = (configuration) => {
+    return new client_secrets_manager_1.SecretsManagerClient({
+        ...configuration,
+        credentials: configuration.credentials || (0, exports.getCredentials)(),
+    });
+};
+exports.generateSecretManager = generateSecretManager;
+/**
+ * Create or update a secret with a list of values.
+ * If you specify a value for a secret that has new keys,
+ * these will be merged into the secret and updated, but
+ * will not overwrite any existing secrets
+ *
+ * @param secretsManagerClient SDK client for secrets
+ * @param secretName key of the given secret
+ * @param defaultValue Record of values to use
+ */
+const hydrateSecret = async (secretsManagerClient, secretName, defaultValue) => {
+    try {
+        console.log(`Processing secret ${secretName}`);
+        // Check if the secret exists
+        const getSecretValueCommand = new client_secrets_manager_1.GetSecretValueCommand({
+            SecretId: secretName,
+        });
+        const existingSecret = await secretsManagerClient.send(getSecretValueCommand);
+        const existingValue = existingSecret.SecretString
+            ? JSON.parse(existingSecret.SecretString)
+            : {};
+        // Merge in any secret values not yet saved
+        let anyChanged = false;
+        for (const [name, value] of Object.entries(defaultValue)) {
+            if (!(name in existingValue)) {
+                anyChanged = true;
+                existingValue[name] = value;
+            }
+        }
+        // If we have any changes update
+        if (anyChanged) {
+            const updateSecretCommand = new client_secrets_manager_1.UpdateSecretCommand({
+                SecretId: existingSecret.ARN,
+                SecretString: JSON.stringify(existingValue),
+            });
+            console.log('Secret has changed, updating');
+            await secretsManagerClient.send(updateSecretCommand);
+        }
+        else {
+            console.log('Secret has been left in place');
+        }
+    }
+    catch (error) {
+        // Secret does not exist, create it
+        if (isResourceNotFoundError(error)) {
+            const createSecretCommand = new client_secrets_manager_1.CreateSecretCommand({
+                Name: secretName,
+                SecretString: JSON.stringify(defaultValue),
+            });
+            console.log('Secret is being created');
+            await secretsManagerClient.send(createSecretCommand);
+        }
+        else {
+            // Unexpected error occurred
+            throw error;
+        }
+    }
+};
+exports.hydrateSecret = hydrateSecret;

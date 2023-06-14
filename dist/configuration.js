@@ -1,6 +1,30 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Stage = exports.StackConfig = void 0;
+const cdk = __importStar(require("aws-cdk-lib"));
 /**
  * Represents a single stack in an environment
  */
@@ -85,11 +109,20 @@ class StackConfig {
          */
         this.getProperty = (name, default_value = undefined) => {
             // Look up stack-specific property, failing over to stage if not overridden for this stack
-            const value = this.stack?.[name] || this.stage.getProperty(name) || default_value;
+            const value = this.stack?.[name] ?? this.stage.getProperty(name) ?? default_value;
             if (value) {
                 return value;
             }
             throw new Error(`Missing value ${name} for stack`);
+        };
+        /**
+         * Get the standard removal policy for this tack
+         * @param default_value
+         */
+        this.getRemovalPolicy = (default_value = cdk.RemovalPolicy.RETAIN) => {
+            return (this.stack.removal_policy ??
+                this.stage.getProps().removal_policy ??
+                default_value);
         };
         /**
          * Get build environment required by an CDK stack
@@ -109,7 +142,7 @@ class StackConfig {
          */
         this.getStackProps = () => {
             return {
-                env: this.getEnvironment()
+                env: this.getEnvironment(),
             };
         };
         /**
@@ -130,7 +163,7 @@ class StackConfig {
          * @return {String} an export
          */
         this.getStackExportId = (name) => {
-            return `${this.getSlug()}-${this.getStageName()}-${name}`;
+            return `${this.getSlug()}-${this.getStageId()}-${name}`;
         };
         /**
          * Get base resource ID. Useful for the base stack name.
@@ -138,7 +171,7 @@ class StackConfig {
          * @eturn {string}
          */
         this.getBaseResourceId = () => {
-            return `${this.getSlug()}-${this.getStageName()}-${this.getStackName()}`;
+            return `${this.getSlug()}-${this.getStageId()}-${this.getId()}`;
         };
         /**
          * Generate a resource ARN for any component.
@@ -215,6 +248,12 @@ class Stage {
          */
         this.getId = () => {
             return this.id;
+        };
+        /**
+         * Get stage props
+         */
+        this.getProps = () => {
+            return this.stage;
         };
         /**
          * Main slug to identify this stack by. Used for ECR and secret prefixes.
