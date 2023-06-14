@@ -19,7 +19,7 @@ export class Certificate extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: CertificateProps) {
     super(scope, id, props)
 
-    const { subDomainIncludingDot, stack, zone } = props
+    const { subDomainIncludingDot = '', stack, zone } = props
 
     // Create a certificate in ACM for the domain
     this.certificate = new acm.Certificate(

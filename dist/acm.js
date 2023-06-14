@@ -32,7 +32,7 @@ const acm = __importStar(require("aws-cdk-lib/aws-certificatemanager"));
 class Certificate extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { subDomainIncludingDot, stack, zone } = props;
+        const { subDomainIncludingDot = '', stack, zone } = props;
         // Create a certificate in ACM for the domain
         this.certificate = new acm.Certificate(this, stack.getResourceID('Certificate'), {
             domainName: `${subDomainIncludingDot}${zone.zoneName}`,

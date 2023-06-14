@@ -82,7 +82,7 @@ exports.PostgresInstance = PostgresInstance;
 class PostgresInstanceWithBastion extends PostgresInstance {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { stack, vpc, zone, bastionSubdomainIncludingDot } = props;
+        const { stack, vpc, zone, bastionSubdomainIncludingDot = '' } = props;
         // Create a security group for the bastion host
         const bastionSecurityGroup = new ec2.SecurityGroup(this, stack.getResourceID('BastionSecurityGroup'), {
             vpc,
