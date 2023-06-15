@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostgresInstanceWithBastion = exports.PostgresInstance = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
+const aws_ec2_1 = require("aws-cdk-lib/aws-ec2");
 const ssm = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
 const rds = __importStar(require("aws-cdk-lib/aws-rds"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
@@ -74,6 +75,9 @@ class PostgresInstance extends cdk.NestedStack {
             credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
             deletionProtection: removalPolicy === cdk.RemovalPolicy.RETAIN,
             removalPolicy,
+            vpcSubnets: {
+                subnetType: aws_ec2_1.SubnetType.PRIVATE_WITH_EGRESS,
+            },
         });
     }
 }

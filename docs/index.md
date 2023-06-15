@@ -25,5 +25,6 @@ npm install github:pixelfusion/aws-scripts#master
 [RDS Database](./rds.md)
 [Route53](./route53.md)
 [S3 Bucket](./s3.md)
+[VPC](./vpc.md)
 [Cloudfront Distribution](./website-distribution.md)
 

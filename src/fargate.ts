@@ -4,12 +4,14 @@ import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ssm from 'aws-cdk-lib/aws-secretsmanager'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as iam from 'aws-cdk-lib/aws-iam'
 import * as acm from 'aws-cdk-lib/aws-certificatemanager'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as targets from 'aws-cdk-lib/aws-route53-targets'
 import { StackConfig } from './configuration'
 import { ARecord } from './route53'
+import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
@@ -101,6 +103,7 @@ export class FargateService extends cdk.NestedStack {
       this,
       stack.getResourceID('AdminService'),
       {
+        assignPublicIp: true,
         cluster: cluster,
         certificate: certificate,
         redirectHTTP: true,
@@ -112,8 +115,21 @@ export class FargateService extends cdk.NestedStack {
           environment: taskConfiguration?.environment || {},
           secrets,
         },
+        taskSubnets: {
+          subnetType: ec2.SubnetType.PUBLIC,
+          onePerAz: true,
+        },
       },
     )
+
+    // Hack to fix subnets issue
+    // https://github.com/aws/aws-cdk/issues/5892#issuecomment-701993883
+    const cfnLoadBalancer = this.service.loadBalancer.node
+      .defaultChild as elb.CfnLoadBalancer
+    cfnLoadBalancer.subnets = cluster.vpc.selectSubnets({
+      onePerAz: true,
+      subnetType: ec2.SubnetType.PUBLIC,
+    }).subnetIds
 
     const taskDefinition = this.service.taskDefinition
 

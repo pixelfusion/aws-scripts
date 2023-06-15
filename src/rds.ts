@@ -1,6 +1,7 @@
 import { Construct } from 'constructs'
 import * as cdk from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import { SubnetType } from 'aws-cdk-lib/aws-ec2'
 import * as ssm from 'aws-cdk-lib/aws-secretsmanager'
 import * as rds from 'aws-cdk-lib/aws-rds'
 import * as route53 from 'aws-cdk-lib/aws-route53'
@@ -88,6 +89,9 @@ export class PostgresInstance extends cdk.NestedStack {
       credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
       deletionProtection: removalPolicy === cdk.RemovalPolicy.RETAIN,
       removalPolicy,
+      vpcSubnets: {
+        subnetType: SubnetType.PRIVATE_WITH_EGRESS,
+      },
     })
   }
 }

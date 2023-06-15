@@ -28,6 +28,7 @@ const cdk = __importStar(require("aws-cdk-lib"));
 const ecs = __importStar(require("aws-cdk-lib/aws-ecs"));
 const ecs_patterns = __importStar(require("aws-cdk-lib/aws-ecs-patterns"));
 const ssm = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
+const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
@@ -61,6 +62,7 @@ class FargateService extends cdk.NestedStack {
             ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
             : ecs.ContainerImage.fromEcrRepository(repository, imageVersion);
         this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
+            assignPublicIp: true,
             cluster: cluster,
             certificate: certificate,
             redirectHTTP: true,
@@ -72,7 +74,19 @@ class FargateService extends cdk.NestedStack {
                 environment: taskConfiguration?.environment || {},
                 secrets,
             },
+            taskSubnets: {
+                subnetType: ec2.SubnetType.PUBLIC,
+                onePerAz: true,
+            },
         });
+        // Hack to fix subnets issue
+        // https://github.com/aws/aws-cdk/issues/5892#issuecomment-701993883
+        const cfnLoadBalancer = this.service.loadBalancer.node
+            .defaultChild;
+        cfnLoadBalancer.subnets = cluster.vpc.selectSubnets({
+            onePerAz: true,
+            subnetType: ec2.SubnetType.PUBLIC,
+        }).subnetIds;
         const taskDefinition = this.service.taskDefinition;
         taskDefinition.addToExecutionRolePolicy(new iam.PolicyStatement({
             actions: [
