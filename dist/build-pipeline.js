@@ -51,7 +51,7 @@ class BuildPipeline extends cdk.NestedStack {
         // Git details
         githubRepositoryOwner, githubRepositoryName, githubBranchName, 
         // Secret keys
-        webhookSecretName = stack.getSecretName('Pipeline'), webhookSecretKey = 'secret', githubAccessTokenSecretName = stack.getSecretName('GithubToken'), githubAccessTokenSecretKey = 'secret', 
+        webhookSecretName = stack.getSecretName('pipeline'), webhookSecretKey = 'secret', githubAccessTokenSecretName = stack.getSecretName('githubtoken'), githubAccessTokenSecretKey = 'secret', 
         // Args
         buildProjectImage = codebuild.LinuxBuildImage.STANDARD_7_0.imageId, environment = {}, } = props;
         // Actually create these parameters now once constructor has been called
@@ -65,7 +65,7 @@ class BuildPipeline extends cdk.NestedStack {
         // Get secrets
         const githubAccessTokenSecret = secretsmanager.Secret.fromSecretNameV2(this, 'GithubAccessTokenSecret', githubAccessTokenSecretName).secretValueFromJson(githubAccessTokenSecretKey);
         const webhookAccessTokenSecret = secretsmanager.Secret.fromSecretNameV2(this, 'WebhookAccessTokenSecret', webhookSecretName).secretValueFromJson(webhookSecretKey);
-        const codePipeline = new codepipeline.Pipeline(this, 'Pipeline', {
+        this.codePipeline = new codepipeline.Pipeline(this, 'Pipeline', {
             pipelineName: 'MyPipeline',
         });
         const outputArtifact = new codepipeline.Artifact('Source');
@@ -79,12 +79,12 @@ class BuildPipeline extends cdk.NestedStack {
             oauthToken: githubAccessTokenSecret,
             trigger: aws_codepipeline_actions_1.GitHubTrigger.WEBHOOK,
         });
-        codePipeline.addStage({
+        this.codePipeline.addStage({
             stageName: 'Source',
             actions: [githubSourceAction],
         });
         // CodeBuild project
-        const buildProject = new codebuild.PipelineProject(this, 'BuildProject', {
+        this.buildProject = new codebuild.PipelineProject(this, 'BuildProject', {
             projectName: 'MyBuildProject',
             environment: {
                 buildImage: codebuild.LinuxBuildImage.fromCodeBuildImageId(buildProjectImage),
@@ -92,7 +92,7 @@ class BuildPipeline extends cdk.NestedStack {
             },
         });
         // Add external webhook
-        new codepipeline.CfnWebhook(this, 'MyCfnWebhook', {
+        this.externalWebhook = new codepipeline.CfnWebhook(this, 'MyCfnWebhook', {
             authentication: 'UNAUTHENTICATED',
             authenticationConfiguration: {},
             filters: [
@@ -102,11 +102,11 @@ class BuildPipeline extends cdk.NestedStack {
                 },
             ],
             targetAction: 'SourceAction',
-            targetPipeline: codePipeline.pipelineName,
+            targetPipeline: this.codePipeline.pipelineName,
             targetPipelineVersion: 1,
         });
         // Add some basic default permissions
-        buildProject.addToRolePolicy(new iam.PolicyStatement({
+        this.buildProject.addToRolePolicy(new iam.PolicyStatement({
             actions: [
                 'codecommit:*',
                 'codedeploy:*',
@@ -119,16 +119,19 @@ class BuildPipeline extends cdk.NestedStack {
         }));
         const codeBuildAction = new codepipelineActions.CodeBuildAction({
             actionName: 'CodeBuild',
-            project: buildProject,
+            project: this.buildProject,
             input: outputArtifact,
         });
-        codePipeline.addStage({
+        this.codePipeline.addStage({
             stageName: 'Build',
             actions: [codeBuildAction],
         });
         // Export pipeline ARN for use in the parent stack
         new cdk.CfnOutput(this, 'PipelineArn', {
-            value: codePipeline.pipelineArn,
+            value: this.codePipeline.pipelineArn,
+        });
+        new cdk.CfnOutput(this, 'WebhookUrl', {
+            value: this.externalWebhook.attrUrl,
         });
     }
 }
