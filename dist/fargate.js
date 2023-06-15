@@ -78,6 +78,14 @@ class FargateService extends cdk.NestedStack {
                 onePerAz: true,
             },
         });
+        // Hack to fix subnets issue
+        // https://github.com/aws/aws-cdk/issues/5892#issuecomment-701993883
+        const cfnLoadBalancer = this.service.loadBalancer.node
+            .defaultChild;
+        cfnLoadBalancer.subnets = cluster.vpc.selectSubnets({
+            onePerAz: true,
+            subnetType: ec2.SubnetType.PUBLIC,
+        }).subnetIds;
         const taskDefinition = this.service.taskDefinition;
         taskDefinition.addToExecutionRolePolicy(new iam.PolicyStatement({
             actions: [
