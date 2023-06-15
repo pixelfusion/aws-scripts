@@ -75,6 +75,7 @@ class FargateService extends cdk.NestedStack {
             },
             taskSubnets: {
                 subnetType: ec2.SubnetType.PUBLIC,
+                onePerAz: true,
             },
         });
         const taskDefinition = this.service.taskDefinition;
