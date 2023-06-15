@@ -4,6 +4,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ssm from 'aws-cdk-lib/aws-secretsmanager'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as iam from 'aws-cdk-lib/aws-iam'
 import * as acm from 'aws-cdk-lib/aws-certificatemanager'
 import * as route53 from 'aws-cdk-lib/aws-route53'
@@ -111,6 +112,9 @@ export class FargateService extends cdk.NestedStack {
           image,
           environment: taskConfiguration?.environment || {},
           secrets,
+        },
+        taskSubnets: {
+          subnetType: ec2.SubnetType.PUBLIC,
         },
       },
     )
