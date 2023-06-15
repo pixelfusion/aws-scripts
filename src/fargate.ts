@@ -103,6 +103,7 @@ export class FargateService extends cdk.NestedStack {
       this,
       stack.getResourceID('AdminService'),
       {
+        assignPublicIp: true,
         cluster: cluster,
         certificate: certificate,
         redirectHTTP: true,

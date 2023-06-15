@@ -62,6 +62,7 @@ class FargateService extends cdk.NestedStack {
             ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
             : ecs.ContainerImage.fromEcrRepository(repository, imageVersion);
         this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
+            assignPublicIp: true,
             cluster: cluster,
             certificate: certificate,
             redirectHTTP: true,
