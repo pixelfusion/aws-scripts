@@ -28,6 +28,7 @@ const cdk = __importStar(require("aws-cdk-lib"));
 const ecs = __importStar(require("aws-cdk-lib/aws-ecs"));
 const ecs_patterns = __importStar(require("aws-cdk-lib/aws-ecs-patterns"));
 const ssm = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
+const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
@@ -71,6 +72,9 @@ class FargateService extends cdk.NestedStack {
                 image,
                 environment: taskConfiguration?.environment || {},
                 secrets,
+            },
+            taskSubnets: {
+                subnetType: ec2.SubnetType.PUBLIC,
             },
         });
         const taskDefinition = this.service.taskDefinition;
