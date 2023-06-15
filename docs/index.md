@@ -27,4 +27,3 @@ npm install github:pixelfusion/aws-scripts#master
 [S3 Bucket](./s3.md)
 [VPC](./vpc.md)
 [Cloudfront Distribution](./website-distribution.md)
-
