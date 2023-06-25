@@ -37,7 +37,7 @@ const route53_1 = require("./route53");
 class PostgresInstance extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { stack, postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
+        const { stack, instanceType = ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO), postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
             .postgresFullVersion, postgresMajorVersion = '15', 
         // RDS should snapshot by default
         removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT), vpc, } = props;
@@ -66,8 +66,8 @@ class PostgresInstance extends cdk.NestedStack {
             engine: rds.DatabaseInstanceEngine.postgres({
                 version: rds.PostgresEngineVersion.of(postgresFullVersion, postgresMajorVersion),
             }),
-            instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
-            vpc: vpc,
+            instanceType,
+            vpc,
             databaseName: 'website',
             instanceIdentifier: rdsInstanceId,
             maxAllocatedStorage: 200,

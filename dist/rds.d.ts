@@ -7,6 +7,7 @@ import { StackConfig } from './configuration';
 export interface PostgresInstanceProps extends cdk.NestedStackProps {
     postgresFullVersion?: string;
     postgresMajorVersion?: string;
+    instanceType?: ec2.InstanceType;
     stack: StackConfig;
     vpc: ec2.IVpc;
     removalPolicy?: cdk.RemovalPolicy;
@@ -15,7 +16,7 @@ export interface PostgresInstanceProps extends cdk.NestedStackProps {
  * Generate a postgres instance with secret keys and bastion server
  */
 export declare class PostgresInstance extends cdk.NestedStack {
-    protected readonly rdsInstance: rds.DatabaseInstance;
+    readonly rdsInstance: rds.DatabaseInstance;
     constructor(scope: Construct, id: string, props: PostgresInstanceProps);
 }
 export interface PostgresInstanceWithBastionProps extends PostgresInstanceProps {
