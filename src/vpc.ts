@@ -5,6 +5,7 @@ import { IIpAddresses } from 'aws-cdk-lib/aws-ec2/lib/ip-addresses'
 
 export interface VpcProps extends cdk.NestedStackProps {
   ipAddresses?: IIpAddresses
+  natGateways?: number
 }
 
 /**
@@ -16,12 +17,15 @@ export class Vpc extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: VpcProps) {
     super(scope, id, props)
 
-    const { ipAddresses = ec2.IpAddresses.cidr('10.0.0.0/16') } = props
+    const {
+      ipAddresses = ec2.IpAddresses.cidr('10.0.0.0/16'),
+      natGateways = 0,
+    } = props
 
     this.vpc = new ec2.Vpc(this, 'VPC', {
       ipAddresses,
       maxAzs: 2,
-      natGateways: 0,
+      natGateways,
       subnetConfiguration: [
         {
           cidrMask: 20,

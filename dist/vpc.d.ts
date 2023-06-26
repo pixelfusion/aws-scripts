@@ -4,6 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { IIpAddresses } from 'aws-cdk-lib/aws-ec2/lib/ip-addresses';
 export interface VpcProps extends cdk.NestedStackProps {
     ipAddresses?: IIpAddresses;
+    natGateways?: number;
 }
 /**
  * Makes a standard VPC with two public and two private subnets
