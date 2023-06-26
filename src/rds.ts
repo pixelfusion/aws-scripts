@@ -29,7 +29,7 @@ export class PostgresInstance extends cdk.NestedStack {
     const {
       stack,
       instanceType = ec2.InstanceType.of(
-        ec2.InstanceClass.T2,
+        ec2.InstanceClass.T3,
         ec2.InstanceSize.MICRO,
       ),
       postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
