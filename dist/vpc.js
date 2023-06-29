@@ -32,11 +32,11 @@ const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
 class Vpc extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { ipAddresses = ec2.IpAddresses.cidr('10.0.0.0/16') } = props;
+        const { ipAddresses = ec2.IpAddresses.cidr('10.0.0.0/16'), natGateways = 0, } = props;
         this.vpc = new ec2.Vpc(this, 'VPC', {
             ipAddresses,
             maxAzs: 2,
-            natGateways: 0,
+            natGateways,
             subnetConfiguration: [
                 {
                     cidrMask: 20,

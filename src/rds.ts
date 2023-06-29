@@ -11,6 +11,7 @@ import { ARecord } from './route53'
 export interface PostgresInstanceProps extends cdk.NestedStackProps {
   postgresFullVersion?: string
   postgresMajorVersion?: string
+  instanceType?: ec2.InstanceType
   stack: StackConfig
   vpc: ec2.IVpc
   removalPolicy?: cdk.RemovalPolicy
@@ -20,13 +21,17 @@ export interface PostgresInstanceProps extends cdk.NestedStackProps {
  * Generate a postgres instance with secret keys and bastion server
  */
 export class PostgresInstance extends cdk.NestedStack {
-  protected readonly rdsInstance: rds.DatabaseInstance
+  public readonly rdsInstance: rds.DatabaseInstance
 
   constructor(scope: Construct, id: string, props: PostgresInstanceProps) {
     super(scope, id, props)
 
     const {
       stack,
+      instanceType = ec2.InstanceType.of(
+        ec2.InstanceClass.T3,
+        ec2.InstanceSize.MICRO,
+      ),
       postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
         .postgresFullVersion,
       postgresMajorVersion = '15',
@@ -77,11 +82,8 @@ export class PostgresInstance extends cdk.NestedStack {
           postgresMajorVersion,
         ),
       }),
-      instanceType: ec2.InstanceType.of(
-        ec2.InstanceClass.T3,
-        ec2.InstanceSize.MICRO,
-      ),
-      vpc: vpc,
+      instanceType,
+      vpc,
       databaseName: 'website',
       instanceIdentifier: rdsInstanceId,
       maxAllocatedStorage: 200,
