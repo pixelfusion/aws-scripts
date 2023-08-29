@@ -23,6 +23,7 @@ const DEFAULT_VERSION = 'default'
  */
 export interface TaskConfiguration {
   memoryLimitMiB?: number
+  healthCheckGracePeriod?: cdk.Duration
   cpu?: number
   desiredCount?: number
   environment?: Record<string, string>
@@ -108,6 +109,8 @@ export class FargateService extends cdk.NestedStack {
         certificate: certificate,
         redirectHTTP: true,
         memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
+        healthCheckGracePeriod:
+          taskConfiguration?.healthCheckGracePeriod || cdk.Duration.seconds(60),
         cpu: taskConfiguration?.cpu || 256,
         desiredCount: taskConfiguration?.desiredCount || 1,
         taskImageOptions: {

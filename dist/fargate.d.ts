@@ -11,6 +11,7 @@ import { StackConfig } from './configuration';
  */
 export interface TaskConfiguration {
     memoryLimitMiB?: number;
+    healthCheckGracePeriod?: cdk.Duration;
     cpu?: number;
     desiredCount?: number;
     environment?: Record<string, string>;
