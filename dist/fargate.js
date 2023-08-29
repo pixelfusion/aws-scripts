@@ -67,6 +67,7 @@ class FargateService extends cdk.NestedStack {
             certificate: certificate,
             redirectHTTP: true,
             memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
+            healthCheckGracePeriod: taskConfiguration?.healthCheckGracePeriod || cdk.Duration.seconds(60),
             cpu: taskConfiguration?.cpu || 256,
             desiredCount: taskConfiguration?.desiredCount || 1,
             taskImageOptions: {
