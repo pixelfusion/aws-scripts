@@ -52,6 +52,19 @@ class S3Bucket extends cdk.NestedStack {
                 ignorePublicAcls: false,
                 restrictPublicBuckets: false,
             },
+            cors: [
+                {
+                    allowedMethods: [
+                        s3.HttpMethods.GET,
+                        s3.HttpMethods.PUT,
+                        s3.HttpMethods.HEAD,
+                        s3.HttpMethods.POST,
+                        s3.HttpMethods.DELETE,
+                    ],
+                    allowedOrigins: ['*'],
+                    allowedHeaders: ['*'],
+                },
+            ],
         });
         if (bucketAccess === BucketAccess.Public) {
             // Conditionally add policy
