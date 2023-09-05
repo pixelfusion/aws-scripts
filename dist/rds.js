@@ -118,7 +118,9 @@ class PostgresInstanceWithBastion extends PostgresInstance {
         const bastionEip = new ec2.CfnEIP(this, stack.getResourceID('BastionEIP'));
         // Associate the Elastic IP with the bastion host
         new ec2.CfnEIPAssociation(this, stack.getResourceID('BastionEipAssociation'), {
-            eip: bastionEip.ref,
+            // Note: Use allocationId as per https://github.com/aws/aws-cdk/issues/26423
+            // eip: bastionEip.ref,
+            allocationId: bastionEip.attrAllocationId,
             instanceId: bastion.instanceId,
         });
         // Create hostname for ssh. for bastion

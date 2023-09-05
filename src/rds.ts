@@ -175,7 +175,9 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
       this,
       stack.getResourceID('BastionEipAssociation'),
       {
-        eip: bastionEip.ref,
+        // Note: Use allocationId as per https://github.com/aws/aws-cdk/issues/26423
+        // eip: bastionEip.ref,
+        allocationId: bastionEip.attrAllocationId,
         instanceId: bastion.instanceId,
       },
     )
