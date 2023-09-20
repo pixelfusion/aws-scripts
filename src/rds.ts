@@ -101,7 +101,7 @@ export class PostgresInstance extends cdk.NestedStack {
 export interface PostgresInstanceWithBastionProps
   extends PostgresInstanceProps {
   bastionSubdomainIncludingDot?: string
-  zone: route53.IHostedZone
+  zone?: route53.IHostedZone
 }
 
 /**
@@ -167,25 +167,24 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
     // Allow the bastion host to connect to the database
     this.rdsInstance.connections.allowFrom(bastion, ec2.Port.tcp(5432))
 
-    // Allocate an Elastic IP
-    const bastionEip = new ec2.CfnEIP(this, stack.getResourceID('BastionEIP'))
+    // Optionally have a hostname, if a zone is supplied
+    if (zone) {
+      // Allocate an Elastic IP
+      const bastionEip = new ec2.CfnEIP(
+        this,
+        stack.getResourceID('BastionEIP'),
+        {
+          instanceId: bastion.instanceId,
+        },
+      )
 
-    // Associate the Elastic IP with the bastion host
-    new ec2.CfnEIPAssociation(
-      this,
-      stack.getResourceID('BastionEipAssociation'),
-      {
-        eip: bastionEip.ref,
-        instanceId: bastion.instanceId,
-      },
-    )
-
-    // Create hostname for ssh. for bastion
-    new ARecord(this, stack.getResourceID('BastionRecordSet'), {
-      subDomainIncludingDot: bastionSubdomainIncludingDot,
-      target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
-      stack,
-      zone,
-    })
+      // Create hostname for ssh. for bastion
+      new ARecord(this, stack.getResourceID('BastionRecordSet'), {
+        subDomainIncludingDot: bastionSubdomainIncludingDot,
+        target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
+        stack,
+        zone,
+      })
+    }
   }
 }
