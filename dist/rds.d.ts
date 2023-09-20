@@ -21,7 +21,7 @@ export declare class PostgresInstance extends cdk.NestedStack {
 }
 export interface PostgresInstanceWithBastionProps extends PostgresInstanceProps {
     bastionSubdomainIncludingDot?: string;
-    zone: route53.IHostedZone;
+    zone?: route53.IHostedZone;
 }
 /**
  * RDS instance with bastion

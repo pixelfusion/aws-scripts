@@ -114,22 +114,20 @@ class PostgresInstanceWithBastion extends PostgresInstance {
         bastion.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH access from the internet');
         // Allow the bastion host to connect to the database
         this.rdsInstance.connections.allowFrom(bastion, ec2.Port.tcp(5432));
-        // Allocate an Elastic IP
-        const bastionEip = new ec2.CfnEIP(this, stack.getResourceID('BastionEIP'));
-        // Associate the Elastic IP with the bastion host
-        new ec2.CfnEIPAssociation(this, stack.getResourceID('BastionEipAssociation'), {
-            // Note: Use allocationId as per https://github.com/aws/aws-cdk/issues/26423
-            // eip: bastionEip.ref,
-            allocationId: bastionEip.attrAllocationId,
-            instanceId: bastion.instanceId,
-        });
-        // Create hostname for ssh. for bastion
-        new route53_1.ARecord(this, stack.getResourceID('BastionRecordSet'), {
-            subDomainIncludingDot: bastionSubdomainIncludingDot,
-            target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
-            stack,
-            zone,
-        });
+        // Optionally have a hostname, if a zone is supplied
+        if (zone) {
+            // Allocate an Elastic IP
+            const bastionEip = new ec2.CfnEIP(this, stack.getResourceID('BastionEIP'), {
+                instanceId: bastion.instanceId,
+            });
+            // Create hostname for ssh. for bastion
+            new route53_1.ARecord(this, stack.getResourceID('BastionRecordSet'), {
+                subDomainIncludingDot: bastionSubdomainIncludingDot,
+                target: route53.RecordTarget.fromIpAddresses(bastionEip.attrPublicIp),
+                stack,
+                zone,
+            });
+        }
     }
 }
 exports.PostgresInstanceWithBastion = PostgresInstanceWithBastion;
