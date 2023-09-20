@@ -1,6 +1,6 @@
 {
   "name": "@pixelfusion/aws-scripts",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "AWS CDK scripts",
   "scripts": {
     "build": "tsc"
