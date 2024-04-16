@@ -4,17 +4,13 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import { IIpAddresses } from 'aws-cdk-lib/aws-ec2/lib/ip-addresses'
 import { Fn } from 'aws-cdk-lib'
 
-export interface VpcProps extends cdk.NestedStackProps {
-  ipAddresses?: IIpAddresses
-}
-
 /**
  * Makes a Ipv6 VPC
  */
-class Ipv6vpc extends ec2.Vpc {
+export class Ipv6vpc extends ec2.Vpc {
   public egressOnlyInternetGatewayId!: string;
 
-  constructor(scope: Construct, id: string, props?: VpcProps) {
+  constructor(scope: Construct, id: string, props?: ec2.VpcProps) {
     super(scope, id, props);
 
     cdk.Tags.of(this).add("Name", this.node.path);
