@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
       - name: Install dependencies
         run: npm ci
       - name: Build dependencies
@@ -30,13 +30,12 @@ jobs:
           git fetch origin
       - name: Install semantic release
         shell: bash
-        # Note: Remove the alias line once https://github.com/semantic-release/github/pull/487 is merged
         run: |-
           npm install -g \
-            @semantic-release/github@npm:@achingbrain/semantic-release-github@0.0.1 \
             semantic-release \
             @semantic-release/exec \
-            @semantic-release/git
+            @semantic-release/git \
+            semantic-release-major-tag
       - name: Release
         shell: bash
         # Note: semantic-release can partially fail, but still tag (that's important)
