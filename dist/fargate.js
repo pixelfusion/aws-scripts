@@ -61,6 +61,7 @@ class FargateService extends cdk.NestedStack {
         const image = imageVersion === DEFAULT_VERSION
             ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
             : ecs.ContainerImage.fromEcrRepository(repository, imageVersion);
+        const desiredCount = taskConfiguration?.desiredCount || 1;
         this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
             assignPublicIp: true,
             cluster: cluster,
@@ -69,7 +70,7 @@ class FargateService extends cdk.NestedStack {
             memoryLimitMiB: taskConfiguration?.memoryLimitMiB || 512,
             healthCheckGracePeriod: taskConfiguration?.healthCheckGracePeriod || cdk.Duration.seconds(60),
             cpu: taskConfiguration?.cpu || 256,
-            desiredCount: taskConfiguration?.desiredCount || 1,
+            desiredCount,
             taskImageOptions: {
                 image,
                 environment: taskConfiguration?.environment || {},
@@ -80,6 +81,17 @@ class FargateService extends cdk.NestedStack {
                 onePerAz: true,
             },
         });
+        // Setup AutoScaling policy
+        if (taskConfiguration.autoScalingCpuTarget) {
+            // Default max capacity to double desired unless specified
+            const maxCapacity = taskConfiguration?.maxCount || desiredCount * 2;
+            const scaling = this.service.service.autoScaleTaskCount({ maxCapacity });
+            scaling.scaleOnCpuUtilization(stack.getResourceID('CpuScaling'), {
+                targetUtilizationPercent: taskConfiguration.autoScalingCpuTarget,
+                scaleInCooldown: cdk.Duration.seconds(60),
+                scaleOutCooldown: cdk.Duration.seconds(60),
+            });
+        }
         // Hack to fix subnets issue
         // https://github.com/aws/aws-cdk/issues/5892#issuecomment-701993883
         const cfnLoadBalancer = this.service.loadBalancer.node

@@ -14,6 +14,8 @@ export interface TaskConfiguration {
     healthCheckGracePeriod?: cdk.Duration;
     cpu?: number;
     desiredCount?: number;
+    autoScalingCpuTarget?: number;
+    maxCount?: number;
     environment?: Record<string, string>;
     secrets?: Record<string, string>;
 }
