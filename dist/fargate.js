@@ -85,7 +85,11 @@ class FargateService extends cdk.NestedStack {
         if (taskConfiguration.autoScalingCpuTarget) {
             // Default max capacity to double desired unless specified
             const maxCapacity = taskConfiguration?.maxCount || desiredCount * 2;
-            const scaling = this.service.service.autoScaleTaskCount({ maxCapacity });
+            const minCapacity = taskConfiguration?.minCount || desiredCount;
+            const scaling = this.service.service.autoScaleTaskCount({
+                maxCapacity,
+                minCapacity,
+            });
             scaling.scaleOnCpuUtilization(stack.getResourceID('CpuScaling'), {
                 targetUtilizationPercent: taskConfiguration.autoScalingCpuTarget,
                 scaleInCooldown: cdk.Duration.seconds(60),
