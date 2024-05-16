@@ -16,6 +16,7 @@ export interface TaskConfiguration {
     desiredCount?: number;
     autoScalingCpuTarget?: number;
     maxCount?: number;
+    minCount?: number;
     environment?: Record<string, string>;
     secrets?: Record<string, string>;
 }
