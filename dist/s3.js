@@ -33,7 +33,7 @@ var BucketAccess;
 (function (BucketAccess) {
     BucketAccess["Public"] = "Public";
     BucketAccess["Private"] = "Priavte";
-})(BucketAccess = exports.BucketAccess || (exports.BucketAccess = {}));
+})(BucketAccess || (exports.BucketAccess = BucketAccess = {}));
 /**
  * Generate an s3 bucket
  */
@@ -44,7 +44,7 @@ class S3Bucket extends cdk.NestedStack {
         // Create base bucket
         this.bucket = new s3.Bucket(this, stack.getResourceID('Bucket'), {
             removalPolicy,
-            publicReadAccess: false,
+            publicReadAccess: false, // Note: Grant selective read on pattern after this
             bucketName,
             blockPublicAccess: {
                 blockPublicAcls: false,
