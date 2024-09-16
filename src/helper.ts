@@ -110,7 +110,7 @@ export const hydrateSecret = async (
   defaultValue: Record<string, string>,
 ): Promise<void> => {
   try {
-    console.log(`Processing secret ${secretName}`)
+    console.log(`Processing json secret ${secretName}`)
 
     // Check if the secret exists
     const getSecretValueCommand = new GetSecretValueCommand({
@@ -149,6 +149,50 @@ export const hydrateSecret = async (
       const createSecretCommand = new CreateSecretCommand({
         Name: secretName,
         SecretString: JSON.stringify(defaultValue),
+      })
+      console.log('Secret is being created')
+      await secretsManagerClient.send(createSecretCommand)
+    } else {
+      // Unexpected error occurred
+      throw error
+    }
+  }
+}
+
+export const hydrateRawSecret = async (
+  secretsManagerClient: SecretsManagerClient,
+  secretName: string,
+  secretValue: string,
+): Promise<void> => {
+  try {
+    console.log(`Processing raw secret ${secretName}`)
+
+    // Check if the secret exists
+    const getSecretValueCommand = new GetSecretValueCommand({
+      SecretId: secretName,
+    })
+    const existingSecret = await secretsManagerClient.send(
+      getSecretValueCommand,
+    )
+    const existingValue = existingSecret.SecretString
+
+    // If secret exists but is blank, hydrate it
+    if (!existingValue) {
+      const updateSecretCommand = new UpdateSecretCommand({
+        SecretId: existingSecret.ARN,
+        SecretString: secretValue,
+      })
+      console.log('Secret is empty, setting initial value')
+      await secretsManagerClient.send(updateSecretCommand)
+    } else {
+      console.log('Secret has been left in place')
+    }
+  } catch (error) {
+    // Secret does not exist, create it
+    if (isResourceNotFoundError(error)) {
+      const createSecretCommand = new CreateSecretCommand({
+        Name: secretName,
+        SecretString: secretValue,
       })
       console.log('Secret is being created')
       await secretsManagerClient.send(createSecretCommand)
