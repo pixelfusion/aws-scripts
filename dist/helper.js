@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hydrateSecret = exports.generateSecretManager = exports.getCredentials = exports.loadJsonFile = void 0;
+exports.hydrateRawSecret = exports.hydrateSecret = exports.generateSecretManager = exports.getCredentials = exports.loadJsonFile = void 0;
 const client_secrets_manager_1 = require("@aws-sdk/client-secrets-manager");
 const credential_providers_1 = require("@aws-sdk/credential-providers");
 const readline = __importStar(require("readline"));
@@ -106,7 +106,7 @@ exports.generateSecretManager = generateSecretManager;
  */
 const hydrateSecret = async (secretsManagerClient, secretName, defaultValue) => {
     try {
-        console.log(`Processing secret ${secretName}`);
+        console.log(`Processing json secret ${secretName}`);
         // Check if the secret exists
         const getSecretValueCommand = new client_secrets_manager_1.GetSecretValueCommand({
             SecretId: secretName,
@@ -153,3 +153,42 @@ const hydrateSecret = async (secretsManagerClient, secretName, defaultValue) => 
     }
 };
 exports.hydrateSecret = hydrateSecret;
+const hydrateRawSecret = async (secretsManagerClient, secretName, secretValue) => {
+    try {
+        console.log(`Processing raw secret ${secretName}`);
+        // Check if the secret exists
+        const getSecretValueCommand = new client_secrets_manager_1.GetSecretValueCommand({
+            SecretId: secretName,
+        });
+        const existingSecret = await secretsManagerClient.send(getSecretValueCommand);
+        const existingValue = existingSecret.SecretString;
+        // If secret exists but is blank, hydrate it
+        if (!existingValue) {
+            const updateSecretCommand = new client_secrets_manager_1.UpdateSecretCommand({
+                SecretId: existingSecret.ARN,
+                SecretString: secretValue,
+            });
+            console.log('Secret is empty, setting initial value');
+            await secretsManagerClient.send(updateSecretCommand);
+        }
+        else {
+            console.log('Secret has been left in place');
+        }
+    }
+    catch (error) {
+        // Secret does not exist, create it
+        if (isResourceNotFoundError(error)) {
+            const createSecretCommand = new client_secrets_manager_1.CreateSecretCommand({
+                Name: secretName,
+                SecretString: secretValue,
+            });
+            console.log('Secret is being created');
+            await secretsManagerClient.send(createSecretCommand);
+        }
+        else {
+            // Unexpected error occurred
+            throw error;
+        }
+    }
+};
+exports.hydrateRawSecret = hydrateRawSecret;

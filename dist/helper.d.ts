@@ -31,3 +31,4 @@ export declare const generateSecretManager: (configuration: SecretsManagerClient
  * @param defaultValue Record of values to use
  */
 export declare const hydrateSecret: (secretsManagerClient: SecretsManagerClient, secretName: string, defaultValue: Record<string, string>) => Promise<void>;
+export declare const hydrateRawSecret: (secretsManagerClient: SecretsManagerClient, secretName: string, secretValue: string) => Promise<void>;
