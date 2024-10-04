@@ -2,6 +2,7 @@ import { Construct } from 'constructs'
 import * as cdk from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import { IIpAddresses } from 'aws-cdk-lib/aws-ec2/lib/ip-addresses'
+import { Ipv6vpc } from './ipv6vpc'
 
 export interface VpcProps extends cdk.NestedStackProps {
   ipAddresses?: IIpAddresses
@@ -22,29 +23,19 @@ export class Vpc extends cdk.NestedStack {
       natGateways = 0,
     } = props
 
-    this.vpc = new ec2.Vpc(this, 'VPC', {
+    this.vpc = new Ipv6vpc(this, 'VPC', {
       ipAddresses,
       maxAzs: 2,
       natGateways,
       subnetConfiguration: [
         {
           cidrMask: 20,
-          name: 'SubnetAPublic',
+          name: 'SubnetPublic',
           subnetType: ec2.SubnetType.PUBLIC,
         },
         {
           cidrMask: 20,
-          name: 'SubnetAPrivate',
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-        },
-        {
-          cidrMask: 20,
-          name: 'SubnetBPublic',
-          subnetType: ec2.SubnetType.PUBLIC,
-        },
-        {
-          cidrMask: 20,
-          name: 'SubnetBPrivate',
+          name: 'SubnetPrivate',
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         },
       ],

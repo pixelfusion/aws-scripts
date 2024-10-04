@@ -6,6 +6,7 @@ import * as cdk from 'aws-cdk-lib'
  *
  * Note that stack con contain multiple services, and most projects only have a single stack.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface StackProps extends Record<string, any> {
   name: string
   slug?: string
