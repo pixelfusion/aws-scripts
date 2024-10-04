@@ -10,6 +10,7 @@ You can add the library directly from github.
 npm install github:pixelfusion/aws-scripts#master
 ```
 
+
 ## Documentation
 
 - [Configuration](./docs/configuration.md)
