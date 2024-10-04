@@ -1,0 +1,52 @@
+name: Tests
+on:
+  push:
+    branches:
+      - '!master'
+  pull_request:
+    branches:
+      - '**'
+jobs:
+  commit-lint:
+    name: Lint commit
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v1
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Setup node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: "Install dependencies"
+        run: |
+          npm ci
+        shell: bash
+      - name: "Lint infrastructure"
+        run: |
+          npm run lint
+        shell: bash
+      - name: "Run prettier in test mode"
+        run: |
+          npm run prettier:check
+        shell: bash
+  lock-diff:
+    name: Lock diff
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Show lock diff
+        uses: pixelfusion/actions/package-diff@v1

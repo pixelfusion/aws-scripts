@@ -1,11 +1,17 @@
+define NVM_SETUP
+	. $(NVM_DIR)/nvm.sh && nvm use $(NODE_VERSION)
+endef
+
 default: help
-nvm:
-	. ${NVM_DIR}/nvm.sh && nvm use && $(CMD)
 clean:
 	rm -rf dist
 build: clean ## Build a production build
-	make nvm CMD="npm run build"
+	@$(NVM_SETUP) && npm run build
 install: ## Install all CDK dependencies
-	make nvm CMD="npm install"
+	@$(NVM_SETUP) && npm install
+lint: ## Lint the code
+	@$(NVM_SETUP) && npm run lint
+fix: ## Fix linting issues
+	@$(NVM_SETUP) && npm run prettier
 help: ## Display a list of commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed 's/makefile://g' | awk 'BEGIN {FS = ":[^:]*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
