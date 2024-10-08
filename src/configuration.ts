@@ -46,7 +46,7 @@ export class StackConfig {
    */
   constructor(id: string, stage: Stage, stack: StackProps) {
     if (!stage) {
-      throw new Error(`Invalid stage ${id}`)
+      throw new Error(`Invalid stack ${id}`)
     }
     this.id = id
     this.stage = stage
@@ -302,6 +302,9 @@ export class Stage {
   private readonly stage: StageProps
 
   constructor(id: string, stage: StageProps) {
+    if (!stage) {
+      throw new Error(`Invalid stage ${id}`)
+    }
     this.id = id
     this.stage = stage
   }

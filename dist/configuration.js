@@ -232,7 +232,7 @@ class StackConfig {
             return name.replace(/[^A-Za-z0-9-]/gi, '-');
         };
         if (!stage) {
-            throw new Error(`Invalid stage ${id}`);
+            throw new Error(`Invalid stack ${id}`);
         }
         this.id = id;
         this.stage = stage;
@@ -290,6 +290,9 @@ class Stage {
             }
             return new StackConfig(id, this, stackProps);
         };
+        if (!stage) {
+            throw new Error(`Invalid stage ${id}`);
+        }
         this.id = id;
         this.stage = stage;
     }
