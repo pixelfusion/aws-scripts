@@ -231,6 +231,9 @@ class StackConfig {
         this.getResourceID = (name) => {
             return name.replace(/[^A-Za-z0-9-]/gi, '-');
         };
+        if (!stage) {
+            throw new Error(`Invalid stage ${id}`);
+        }
         this.id = id;
         this.stage = stage;
         this.stack = stack;

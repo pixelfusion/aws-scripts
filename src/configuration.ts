@@ -45,6 +45,9 @@ export class StackConfig {
    * @param {StackProps} stack Properties for the specific stack
    */
   constructor(id: string, stage: Stage, stack: StackProps) {
+    if (!stage) {
+      throw new Error(`Invalid stage ${id}`)
+    }
     this.id = id
     this.stage = stage
     this.stack = stack
