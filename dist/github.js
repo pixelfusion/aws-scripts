@@ -33,6 +33,7 @@ const secretsmanager = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
 class GithubDeployStack extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
+        const { secretName = 'bootstrap/github' } = props || {};
         // Create IAM user
         const githubDeployUser = new iam.User(this, 'GithubDeployUser', {
             path: '/',
@@ -57,7 +58,7 @@ class GithubDeployStack extends cdk.NestedStack {
         });
         // Store key in secret manager
         new secretsmanager.Secret(this, 'GithubActionsUserSecret', {
-            secretName: 'bootstrap/github',
+            secretName,
             secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
                 AWS_USER_NAME: this.githubActionsUserAccessKey.userName,
                 AWS_ACCESS_KEY_ID: this.githubActionsUserAccessKey.ref,
