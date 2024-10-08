@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GithubDeployStack = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
+const secretsmanager = __importStar(require("aws-cdk-lib/aws-secretsmanager"));
 /**
  * Stack to generate a GitHub deployer, along with key and secret for loading into GitHub secrets
  */
@@ -54,17 +55,14 @@ class GithubDeployStack extends cdk.NestedStack {
         this.githubActionsUserAccessKey = new iam.CfnAccessKey(this, 'GithubActionsUserAccessKey', {
             userName: githubDeployUser.userName,
         });
-        new cdk.CfnOutput(this, 'StackName', {
-            description: 'Stack name.',
-            value: this.stackName,
-        });
-        new cdk.CfnOutput(this, 'GithubUserAccessKeyID', {
-            description: `Value of AWS_ACCESS_KEY_ID for github secrets`,
-            value: this.githubActionsUserAccessKey.ref,
-        });
-        new cdk.CfnOutput(this, 'GithubUserSecretAccessKey', {
-            description: `Value of AWS_SECRET_ACCESS_KEY for github secrets`,
-            value: this.githubActionsUserAccessKey.attrSecretAccessKey,
+        // Store key in secret manager
+        new secretsmanager.Secret(this, 'GithubActionsUserSecret', {
+            secretName: 'bootstrap/github',
+            secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
+                AWS_USER_NAME: this.githubActionsUserAccessKey.userName,
+                AWS_ACCESS_KEY_ID: this.githubActionsUserAccessKey.ref,
+                AWS_SECRET_ACCESS_KEY: this.githubActionsUserAccessKey.attrSecretAccessKey,
+            })),
         });
     }
 }

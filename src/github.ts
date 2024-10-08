@@ -1,6 +1,11 @@
 import { Construct } from 'constructs'
 import * as cdk from 'aws-cdk-lib'
 import * as iam from 'aws-cdk-lib/aws-iam'
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
+
+export interface GithubDeployStackProps extends cdk.NestedStackProps {
+  secretName?: string
+}
 
 /**
  * Stack to generate a GitHub deployer, along with key and secret for loading into GitHub secrets
@@ -8,8 +13,9 @@ import * as iam from 'aws-cdk-lib/aws-iam'
 export class GithubDeployStack extends cdk.NestedStack {
   public readonly githubActionsUserAccessKey: iam.CfnAccessKey
 
-  constructor(scope: Construct, id: string, props: cdk.NestedStackProps) {
+  constructor(scope: Construct, id: string, props: GithubDeployStackProps) {
     super(scope, id, props)
+    const { secretName = 'bootstrap/github' } = props || {}
 
     // Create IAM user
     const githubDeployUser = new iam.User(this, 'GithubDeployUser', {
@@ -43,19 +49,17 @@ export class GithubDeployStack extends cdk.NestedStack {
       },
     )
 
-    new cdk.CfnOutput(this, 'StackName', {
-      description: 'Stack name.',
-      value: this.stackName,
-    })
-
-    new cdk.CfnOutput(this, 'GithubUserAccessKeyID', {
-      description: `Value of AWS_ACCESS_KEY_ID for github secrets`,
-      value: this.githubActionsUserAccessKey.ref,
-    })
-
-    new cdk.CfnOutput(this, 'GithubUserSecretAccessKey', {
-      description: `Value of AWS_SECRET_ACCESS_KEY for github secrets`,
-      value: this.githubActionsUserAccessKey.attrSecretAccessKey,
+    // Store key in secret manager
+    new secretsmanager.Secret(this, 'GithubActionsUserSecret', {
+      secretName,
+      secretStringValue: cdk.SecretValue.unsafePlainText(
+        JSON.stringify({
+          AWS_USER_NAME: this.githubActionsUserAccessKey.userName,
+          AWS_ACCESS_KEY_ID: this.githubActionsUserAccessKey.ref,
+          AWS_SECRET_ACCESS_KEY:
+            this.githubActionsUserAccessKey.attrSecretAccessKey,
+        }),
+      ),
     })
   }
 }
