@@ -16,8 +16,6 @@ import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
 
-const DEFAULT_VERSION = 'default'
-
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
@@ -44,22 +42,24 @@ export type EnvFactory = (
 interface FargateServiceProps extends cdk.NestedStackProps {
   subDomainIncludingDot?: string
   healthCheckPath?: string
-  /**
-   * Set to "default" to run a default image instead of
-   * using the provided repository
-   */
-  imageVersion?: string | 'default'
   stack: StackConfig
   cluster: ecs.ICluster
   certificate: acm.ICertificate
   zone: route53.IHostedZone
-  repository: ecr.IRepository
+  imageVersion?: string
+  repository?: ecr.IRepository
   taskConfiguration: TaskConfiguration
+  image?: ecs.ContainerImage
 }
 
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
+ *
+ * You can pass in either one of the below:
+ * image and repository, repository, or nothing to use the default image
+ * If you pass in image by itself you will need to ensure that the task has permission to pull from that repository.
+ * If you pass in repository then the ECS will automatically have the permissions to pull from that repository.
  */
 export class FargateService extends cdk.NestedStack {
   public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService
@@ -69,7 +69,7 @@ export class FargateService extends cdk.NestedStack {
 
     const {
       healthCheckPath = '/health-check',
-      imageVersion = DEFAULT_VERSION,
+      imageVersion = 'latest',
       subDomainIncludingDot = '',
       stack,
       cluster,
@@ -99,9 +99,10 @@ export class FargateService extends cdk.NestedStack {
 
     // Pick image
     const image =
-      imageVersion === DEFAULT_VERSION
-        ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
-        : ecs.ContainerImage.fromEcrRepository(repository, imageVersion)
+      props.image ||
+      (repository &&
+        ecs.ContainerImage.fromEcrRepository(repository, imageVersion)) ||
+      ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
 
     const desiredCount = taskConfiguration?.desiredCount || 1
     this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(
@@ -156,17 +157,19 @@ export class FargateService extends cdk.NestedStack {
 
     const taskDefinition = this.service.taskDefinition
 
-    taskDefinition.addToExecutionRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'ecr:GetAuthorizationToken',
-          'ecr:BatchCheckLayerAvailability',
-          'ecr:GetDownloadUrlForLayer',
-          'ecr:BatchGetImage',
-        ],
-        resources: [repository.repositoryArn],
-      }),
-    )
+    if (repository) {
+      taskDefinition.addToExecutionRolePolicy(
+        new iam.PolicyStatement({
+          actions: [
+            'ecr:GetAuthorizationToken',
+            'ecr:BatchCheckLayerAvailability',
+            'ecr:GetDownloadUrlForLayer',
+            'ecr:BatchGetImage',
+          ],
+          resources: [repository.repositoryArn],
+        }),
+      )
+    }
 
     // Allow secrets
     taskDefinition.addToExecutionRolePolicy(
