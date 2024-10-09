@@ -32,9 +32,9 @@ export class PostgresInstance extends cdk.NestedStack {
         ec2.InstanceClass.T3,
         ec2.InstanceSize.MICRO,
       ),
-      postgresFullVersion = rds.PostgresEngineVersion.VER_15_2
+      postgresFullVersion = rds.PostgresEngineVersion.VER_16_4
         .postgresFullVersion,
-      postgresMajorVersion = '15',
+      postgresMajorVersion = '16',
       // RDS should snapshot by default
       removalPolicy = stack.getRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT),
       vpc,
