@@ -27,21 +27,23 @@ export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) 
 interface FargateServiceProps extends cdk.NestedStackProps {
     subDomainIncludingDot?: string;
     healthCheckPath?: string;
-    /**
-     * Set to "default" to run a default image instead of
-     * using the provided repository
-     */
-    imageVersion?: string | 'default';
     stack: StackConfig;
     cluster: ecs.ICluster;
     certificate: acm.ICertificate;
     zone: route53.IHostedZone;
-    repository: ecr.IRepository;
+    imageVersion?: string;
+    repository?: ecr.IRepository;
     taskConfiguration: TaskConfiguration;
+    image?: ecs.ContainerImage;
 }
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
+ *
+ * You can pass in either one of the below:
+ * image and repository, repository, or nothing to use the default image
+ * If you pass in image by itself you will need to ensure that the task has permission to pull from that repository.
+ * If you pass in repository then the ECS will automatically have the permissions to pull from that repository.
  */
 export declare class FargateService extends cdk.NestedStack {
     readonly service: ecs_patterns.ApplicationLoadBalancedFargateService;

@@ -35,15 +35,19 @@ const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
 const route53_1 = require("./route53");
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
-const DEFAULT_VERSION = 'default';
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
  * load balancer.
+ *
+ * You can pass in either one of the below:
+ * image and repository, repository, or nothing to use the default image
+ * If you pass in image by itself you will need to ensure that the task has permission to pull from that repository.
+ * If you pass in repository then the ECS will automatically have the permissions to pull from that repository.
  */
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
+        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -58,9 +62,10 @@ class FargateService extends cdk.NestedStack {
             }
         }
         // Pick image
-        const image = imageVersion === DEFAULT_VERSION
-            ? ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
-            : ecs.ContainerImage.fromEcrRepository(repository, imageVersion);
+        const image = props.image ||
+            (repository &&
+                ecs.ContainerImage.fromEcrRepository(repository, imageVersion)) ||
+            ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE);
         const desiredCount = taskConfiguration?.desiredCount || 1;
         this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
             assignPublicIp: true,
@@ -105,15 +110,17 @@ class FargateService extends cdk.NestedStack {
             subnetType: ec2.SubnetType.PUBLIC,
         }).subnetIds;
         const taskDefinition = this.service.taskDefinition;
-        taskDefinition.addToExecutionRolePolicy(new iam.PolicyStatement({
-            actions: [
-                'ecr:GetAuthorizationToken',
-                'ecr:BatchCheckLayerAvailability',
-                'ecr:GetDownloadUrlForLayer',
-                'ecr:BatchGetImage',
-            ],
-            resources: [repository.repositoryArn],
-        }));
+        if (repository) {
+            taskDefinition.addToExecutionRolePolicy(new iam.PolicyStatement({
+                actions: [
+                    'ecr:GetAuthorizationToken',
+                    'ecr:BatchCheckLayerAvailability',
+                    'ecr:GetDownloadUrlForLayer',
+                    'ecr:BatchGetImage',
+                ],
+                resources: [repository.repositoryArn],
+            }));
+        }
         // Allow secrets
         taskDefinition.addToExecutionRolePolicy(new iam.PolicyStatement({
             actions: ['secretsmanager:GetSecretValue'],
