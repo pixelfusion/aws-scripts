@@ -47,7 +47,7 @@ const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, createTimeout, updateTimeout, } = props;
+        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -86,26 +86,6 @@ class FargateService extends cdk.NestedStack {
                 onePerAz: true,
             },
         });
-        // Extract the low-level CloudFormation resource for the Fargate Service
-        const cfnService = this.service.service.node.defaultChild;
-        // Add wait timeout for creation
-        if (createTimeout) {
-            cfnService.addPropertyOverride('CreationPolicy', {
-                ResourceSignal: {
-                    Timeout: createTimeout, // Timeout after 15 minutes
-                },
-            });
-        }
-        // Add wait timeout for updates
-        if (updateTimeout) {
-            cfnService.addPropertyOverride('UpdatePolicy', {
-                AutoScalingRollingUpdate: {
-                    MinInstancesInService: '1',
-                    MaxBatchSize: '1',
-                    PauseTime: updateTimeout,
-                },
-            });
-        }
         // Setup AutoScaling policy
         if (taskConfiguration.autoScalingCpuTarget) {
             // Default max capacity to double desired unless specified

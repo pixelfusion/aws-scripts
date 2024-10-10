@@ -12,7 +12,6 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets'
 import { StackConfig } from './configuration'
 import { ARecord } from './route53'
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
-import { CfnService } from 'aws-cdk-lib/aws-ecs'
 
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
@@ -51,8 +50,6 @@ interface FargateServiceProps extends cdk.NestedStackProps {
   repository?: ecr.IRepository
   taskConfiguration: TaskConfiguration
   image?: ecs.ContainerImage
-  createTimeout?: string
-  updateTimeout?: string
 }
 
 /**
@@ -80,8 +77,6 @@ export class FargateService extends cdk.NestedStack {
       zone,
       repository,
       taskConfiguration,
-      createTimeout,
-      updateTimeout,
     } = props
 
     // Compile secrets into list of mapped ecs.Secrets
@@ -134,29 +129,6 @@ export class FargateService extends cdk.NestedStack {
         },
       },
     )
-
-    // Extract the low-level CloudFormation resource for the Fargate Service
-    const cfnService = this.service.service.node.defaultChild as CfnService
-
-    // Add wait timeout for creation
-    if (createTimeout) {
-      cfnService.addPropertyOverride('CreationPolicy', {
-        ResourceSignal: {
-          Timeout: createTimeout, // Timeout after 15 minutes
-        },
-      })
-    }
-
-    // Add wait timeout for updates
-    if (updateTimeout) {
-      cfnService.addPropertyOverride('UpdatePolicy', {
-        AutoScalingRollingUpdate: {
-          MinInstancesInService: '1',
-          MaxBatchSize: '1',
-          PauseTime: updateTimeout,
-        },
-      })
-    }
 
     // Setup AutoScaling policy
     if (taskConfiguration.autoScalingCpuTarget) {
