@@ -35,6 +35,8 @@ interface FargateServiceProps extends cdk.NestedStackProps {
     repository?: ecr.IRepository;
     taskConfiguration: TaskConfiguration;
     image?: ecs.ContainerImage;
+    createTimeout?: string;
+    updateTimeout?: string;
 }
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
