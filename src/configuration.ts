@@ -252,6 +252,14 @@ export class StackConfig {
   }
 
   /**
+   * Get parameter name.
+   * Note: parameters must start with a `/` to be valid.
+   */
+  getParameterName = (name: string): string => {
+    return `/${this.getSlug()}/${name}`
+  }
+
+  /**
    * Get base ARN for any specified service.
    * Useful for constructing full ARN for abstract services in this account.
    *

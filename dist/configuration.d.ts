@@ -164,6 +164,11 @@ export declare class StackConfig {
      */
     getSecretName: (name: string) => string;
     /**
+     * Get parameter name.
+     * Note: parameters must start with a `/` to be valid.
+     */
+    getParameterName: (name: string) => string;
+    /**
      * Get base ARN for any specified service.
      * Useful for constructing full ARN for abstract services in this account.
      *
