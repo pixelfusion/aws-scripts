@@ -5,6 +5,7 @@ export * from './ecr-repository';
 export * from './fargate';
 export * from './github';
 export * from './helper';
+export * from './ipv6vpc';
 export * from './rds';
 export * from './route53';
 export * from './s3';
