@@ -21,6 +21,7 @@ __exportStar(require("./ecr-repository"), exports);
 __exportStar(require("./fargate"), exports);
 __exportStar(require("./github"), exports);
 __exportStar(require("./helper"), exports);
+__exportStar(require("./ipv6vpc"), exports);
 __exportStar(require("./rds"), exports);
 __exportStar(require("./route53"), exports);
 __exportStar(require("./s3"), exports);
