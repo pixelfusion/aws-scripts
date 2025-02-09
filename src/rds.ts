@@ -128,6 +128,8 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
       stack.getResourceID('BastionSecurityGroup'),
       {
         vpc,
+        allowAllOutbound: true,
+        allowAllIpv6Outbound: true,
       },
     )
 
