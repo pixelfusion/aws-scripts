@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import { StackConfig } from './configuration';
@@ -35,6 +36,7 @@ interface FargateServiceProps extends cdk.NestedStackProps {
     repository?: ecr.IRepository;
     taskConfiguration: TaskConfiguration;
     image?: ecs.ContainerImage;
+    securityGroup?: ec2.ISecurityGroup;
 }
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
