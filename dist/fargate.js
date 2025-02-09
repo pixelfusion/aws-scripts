@@ -33,6 +33,7 @@ const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
 const route53_1 = require("./route53");
+const security_group_1 = require("./security-group");
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
 /**
@@ -47,7 +48,7 @@ const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
+        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, securityGroup: defaultSecurityGroup, } = props;
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -66,8 +67,14 @@ class FargateService extends cdk.NestedStack {
             (repository &&
                 ecs.ContainerImage.fromEcrRepository(repository, imageVersion)) ||
             ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE);
+        // Scaffold default security group if not provided
+        let securityGroup = defaultSecurityGroup;
+        if (!securityGroup) {
+            const groupStack = new security_group_1.SecurityGroup(this, stack.getResourceID('SecurityGroup'), { vpc: cluster.vpc });
+            securityGroup = groupStack.securityGroup;
+        }
         const desiredCount = taskConfiguration?.desiredCount || 1;
-        this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('AdminService'), {
+        this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, stack.getResourceID('FargateService'), {
             assignPublicIp: true,
             cluster: cluster,
             certificate: certificate,
@@ -85,6 +92,7 @@ class FargateService extends cdk.NestedStack {
                 subnetType: ec2.SubnetType.PUBLIC,
                 onePerAz: true,
             },
+            securityGroups: [securityGroup],
         });
         // Setup AutoScaling policy
         if (taskConfiguration.autoScalingCpuTarget) {

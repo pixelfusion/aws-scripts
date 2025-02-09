@@ -92,6 +92,8 @@ class PostgresInstanceWithBastion extends PostgresInstance {
         // Create a security group for the bastion host
         const bastionSecurityGroup = new ec2.SecurityGroup(this, stack.getResourceID('BastionSecurityGroup'), {
             vpc,
+            allowAllOutbound: true,
+            allowAllIpv6Outbound: true,
         });
         // Allow SSH access from anywhere
         bastionSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22));

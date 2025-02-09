@@ -12,6 +12,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets'
 import { StackConfig } from './configuration'
 import { ARecord } from './route53'
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import { SecurityGroup } from './security-group'
 
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
@@ -50,6 +51,7 @@ interface FargateServiceProps extends cdk.NestedStackProps {
   repository?: ecr.IRepository
   taskConfiguration: TaskConfiguration
   image?: ecs.ContainerImage
+  securityGroup?: ec2.ISecurityGroup
 }
 
 /**
@@ -77,6 +79,7 @@ export class FargateService extends cdk.NestedStack {
       zone,
       repository,
       taskConfiguration,
+      securityGroup: defaultSecurityGroup,
     } = props
 
     // Compile secrets into list of mapped ecs.Secrets
@@ -104,10 +107,21 @@ export class FargateService extends cdk.NestedStack {
         ecs.ContainerImage.fromEcrRepository(repository, imageVersion)) ||
       ecs.ContainerImage.fromRegistry(DEFAULT_IMAGE)
 
+    // Scaffold default security group if not provided
+    let securityGroup = defaultSecurityGroup
+    if (!securityGroup) {
+      const groupStack = new SecurityGroup(
+        this,
+        stack.getResourceID('SecurityGroup'),
+        { vpc: cluster.vpc },
+      )
+      securityGroup = groupStack.securityGroup
+    }
+
     const desiredCount = taskConfiguration?.desiredCount || 1
     this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(
       this,
-      stack.getResourceID('AdminService'),
+      stack.getResourceID('FargateService'),
       {
         assignPublicIp: true,
         cluster: cluster,
@@ -127,6 +141,7 @@ export class FargateService extends cdk.NestedStack {
           subnetType: ec2.SubnetType.PUBLIC,
           onePerAz: true,
         },
+        securityGroups: [securityGroup],
       },
     )
 
