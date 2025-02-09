@@ -37,6 +37,7 @@ class SecurityGroup extends cdk.NestedStack {
             vpc,
             description: 'Allows HTTP/HTTPS ingress and all egress traffic',
             allowAllOutbound: true,
+            allowAllIpv6Outbound: true,
         });
         const portsToOpen = incomingPorts || [80, 443];
         // Open all selected ports
