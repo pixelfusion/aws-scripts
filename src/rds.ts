@@ -150,7 +150,7 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
     const keyPair = ec2.KeyPair.fromKeyPairName(
       this,
       stack.getResourceID('BastionKeyPairRef'),
-      key.keyName
+      key.keyName,
     )
 
     // Create the bastion host

@@ -19,6 +19,9 @@
   ],
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "bin": {
+    "aws-session": "scripts/aws-session.sh"
+  },
   "author": "Pixelfusion",
   "license": "ISC",
   "private": true,
