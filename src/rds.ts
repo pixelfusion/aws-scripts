@@ -146,6 +146,13 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
       },
     )
 
+    // Convert CfnKeyPair to IKeyPair for use with keyPair property
+    const keyPair = ec2.KeyPair.fromKeyPairName(
+      this,
+      stack.getResourceID('BastionKeyPairRef'),
+      key.keyName
+    )
+
     // Create the bastion host
     const bastion = new ec2.Instance(this, stack.getResourceID('BastionHost'), {
       vpc,
@@ -158,7 +165,7 @@ export class PostgresInstanceWithBastion extends PostgresInstance {
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC,
       },
-      keyName: key.keyName,
+      keyPair: keyPair,
     })
 
     bastion.connections.allowFromAnyIpv4(
