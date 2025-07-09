@@ -14,6 +14,7 @@ npm install github:pixelfusion/aws-scripts#master
 
 - [Configuration](./configuration.md)
 - [Bootstrapping CDK](./bootstrap.md)
+- [AWS Session Tool](./aws-session.md)
 
 ## List of components
 
