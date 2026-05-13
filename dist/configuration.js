@@ -120,7 +120,7 @@ class StackConfig {
         this.getProperty = (name, default_value = undefined) => {
             // Look up stack-specific property, failing over to stage if not overridden for this stack
             const value = this.stack?.[name] ?? this.stage.getProperty(name) ?? default_value;
-            if (value) {
+            if (value !== undefined && value !== null) {
                 return value;
             }
             throw new Error(`Missing value ${name} for stack`);
