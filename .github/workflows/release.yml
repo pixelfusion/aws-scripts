@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - 1.x
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
@@ -26,7 +27,7 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add dist
           git commit -m "chore: build dist files" || true
-          git push origin master
+          git push origin "${{ github.ref_name }}"
           git fetch origin
       - name: Install semantic release
         shell: bash

@@ -3,7 +3,10 @@
   "version": "1.8.0",
   "description": "AWS CDK scripts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint ./src/**/*",
+    "prettier": "prettier --write ./src/**/*",
+    "prettier:check": "prettier --check ./src/**/*"
   },
   "repository": {
     "type": "git",
