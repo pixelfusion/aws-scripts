@@ -43,6 +43,8 @@ export type EnvFactory = (
 interface FargateServiceProps extends cdk.NestedStackProps {
   subDomainIncludingDot?: string
   healthCheckPath?: string
+  /** Container port the task listens on (ALB target group + task port mapping). Default 80. */
+  containerPort?: number
   stack: StackConfig
   cluster: ecs.ICluster
   certificate: acm.ICertificate
@@ -71,6 +73,7 @@ export class FargateService extends cdk.NestedStack {
 
     const {
       healthCheckPath = '/health-check',
+      containerPort = 80,
       imageVersion = 'latest',
       subDomainIncludingDot = '',
       stack,
@@ -113,7 +116,10 @@ export class FargateService extends cdk.NestedStack {
       const groupStack = new SecurityGroup(
         this,
         stack.getResourceID('SecurityGroup'),
-        { vpc: cluster.vpc },
+        {
+          vpc: cluster.vpc,
+          incomingPorts: [...new Set([80, 443, containerPort])],
+        },
       )
       securityGroup = groupStack.securityGroup
     }
@@ -134,6 +140,7 @@ export class FargateService extends cdk.NestedStack {
         desiredCount,
         taskImageOptions: {
           image,
+          containerPort,
           environment: taskConfiguration?.environment || {},
           secrets,
         },

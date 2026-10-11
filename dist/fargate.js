@@ -58,7 +58,7 @@ const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, securityGroup: defaultSecurityGroup, } = props;
+        const { healthCheckPath = '/health-check', containerPort = 80, imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, securityGroup: defaultSecurityGroup, } = props;
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -80,7 +80,10 @@ class FargateService extends cdk.NestedStack {
         // Scaffold default security group if not provided
         let securityGroup = defaultSecurityGroup;
         if (!securityGroup) {
-            const groupStack = new security_group_1.SecurityGroup(this, stack.getResourceID('SecurityGroup'), { vpc: cluster.vpc });
+            const groupStack = new security_group_1.SecurityGroup(this, stack.getResourceID('SecurityGroup'), {
+                vpc: cluster.vpc,
+                incomingPorts: [...new Set([80, 443, containerPort])],
+            });
             securityGroup = groupStack.securityGroup;
         }
         const desiredCount = taskConfiguration?.desiredCount || 1;
@@ -95,6 +98,7 @@ class FargateService extends cdk.NestedStack {
             desiredCount,
             taskImageOptions: {
                 image,
+                containerPort,
                 environment: taskConfiguration?.environment || {},
                 secrets,
             },
