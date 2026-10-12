@@ -80,10 +80,7 @@ class FargateService extends cdk.NestedStack {
         // Scaffold default security group if not provided
         let securityGroup = defaultSecurityGroup;
         if (!securityGroup) {
-            const groupStack = new security_group_1.SecurityGroup(this, stack.getResourceID('SecurityGroup'), {
-                vpc: cluster.vpc,
-                incomingPorts: [...new Set([80, 443, containerPort])],
-            });
+            const groupStack = new security_group_1.SecurityGroup(this, stack.getResourceID('SecurityGroup'), { vpc: cluster.vpc });
             securityGroup = groupStack.securityGroup;
         }
         const desiredCount = taskConfiguration?.desiredCount || 1;

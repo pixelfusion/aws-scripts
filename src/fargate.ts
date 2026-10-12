@@ -116,10 +116,7 @@ export class FargateService extends cdk.NestedStack {
       const groupStack = new SecurityGroup(
         this,
         stack.getResourceID('SecurityGroup'),
-        {
-          vpc: cluster.vpc,
-          incomingPorts: [...new Set([80, 443, containerPort])],
-        },
+        { vpc: cluster.vpc },
       )
       securityGroup = groupStack.securityGroup
     }
