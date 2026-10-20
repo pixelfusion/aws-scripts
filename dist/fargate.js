@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FargateService = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
@@ -43,7 +53,7 @@ const DEFAULT_VERSION = 'default';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
+        const { healthCheckPath = '/health-check', containerPort = 80, imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -73,6 +83,7 @@ class FargateService extends cdk.NestedStack {
             desiredCount,
             taskImageOptions: {
                 image,
+                containerPort,
                 environment: taskConfiguration?.environment || {},
                 secrets,
             },
