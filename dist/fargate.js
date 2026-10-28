@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FargateService = void 0;
+exports.FargateService = exports.LOAD_BALANCER_INGRESS = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const ecs = __importStar(require("aws-cdk-lib/aws-ecs"));
 const ecs_patterns = __importStar(require("aws-cdk-lib/aws-ecs-patterns"));
@@ -42,6 +42,8 @@ const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
+const load_balancer_ingress_1 = require("./load-balancer-ingress");
+Object.defineProperty(exports, "LOAD_BALANCER_INGRESS", { enumerable: true, get: function () { return load_balancer_ingress_1.LOAD_BALANCER_INGRESS; } });
 const route53_1 = require("./route53");
 const security_group_1 = require("./security-group");
 // Default docker image to use
@@ -58,7 +60,8 @@ const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', containerPort = 80, imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, securityGroup: defaultSecurityGroup, } = props;
+        const { healthCheckPath = '/health-check', containerPort = 80, imageVersion = 'latest', subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, securityGroup: defaultSecurityGroup, loadBalancerIngress = load_balancer_ingress_1.LOAD_BALANCER_INGRESS.Open, loadBalancerCidrs, } = props;
+        const allowedCidrs = (0, load_balancer_ingress_1.resolveLoadBalancerCidrs)(loadBalancerIngress, loadBalancerCidrs);
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -104,7 +107,14 @@ class FargateService extends cdk.NestedStack {
                 onePerAz: true,
             },
             securityGroups: [securityGroup],
+            // Closed listeners get explicit CIDR rules below. Leave this unset for
+            // the default so the pattern keeps opening 80 and 443 to the internet.
+            openListener: allowedCidrs ? false : undefined,
         });
+        if (allowedCidrs) {
+            // This service always terminates HTTPS and redirects HTTP.
+            (0, load_balancer_ingress_1.restrictLoadBalancerIngress)(this, this.service.loadBalancer, cluster.vpc, allowedCidrs, [80, 443]);
+        }
         // Setup AutoScaling policy
         if (taskConfiguration.autoScalingCpuTarget) {
             // Default max capacity to double desired unless specified
