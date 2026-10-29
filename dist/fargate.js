@@ -15,15 +15,25 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FargateService = void 0;
+exports.FargateService = exports.LOAD_BALANCER_INGRESS = void 0;
 const cdk = __importStar(require("aws-cdk-lib"));
 const ecs = __importStar(require("aws-cdk-lib/aws-ecs"));
 const ecs_patterns = __importStar(require("aws-cdk-lib/aws-ecs-patterns"));
@@ -32,6 +42,8 @@ const ec2 = __importStar(require("aws-cdk-lib/aws-ec2"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const route53 = __importStar(require("aws-cdk-lib/aws-route53"));
 const targets = __importStar(require("aws-cdk-lib/aws-route53-targets"));
+const load_balancer_ingress_1 = require("./load-balancer-ingress");
+Object.defineProperty(exports, "LOAD_BALANCER_INGRESS", { enumerable: true, get: function () { return load_balancer_ingress_1.LOAD_BALANCER_INGRESS; } });
 const route53_1 = require("./route53");
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest';
@@ -43,7 +55,8 @@ const DEFAULT_VERSION = 'default';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, } = props;
+        const { healthCheckPath = '/health-check', imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, loadBalancerIngress = load_balancer_ingress_1.LOAD_BALANCER_INGRESS.Open, loadBalancerCidrs, } = props;
+        const allowedCidrs = (0, load_balancer_ingress_1.resolveLoadBalancerCidrs)(loadBalancerIngress, loadBalancerCidrs);
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
         const secretValues = taskConfiguration.secrets;
@@ -80,7 +93,14 @@ class FargateService extends cdk.NestedStack {
                 subnetType: ec2.SubnetType.PUBLIC,
                 onePerAz: true,
             },
+            // Closed listeners get explicit CIDR rules below. Leave this unset for
+            // the default so the pattern keeps opening 80 and 443 to the internet.
+            openListener: allowedCidrs ? false : undefined,
         });
+        if (allowedCidrs) {
+            // This service always terminates HTTPS and redirects HTTP.
+            (0, load_balancer_ingress_1.restrictLoadBalancerIngress)(this, this.service.loadBalancer, cluster.vpc, allowedCidrs, [80, 443]);
+        }
         // Setup AutoScaling policy
         if (taskConfiguration.autoScalingCpuTarget) {
             // Default max capacity to double desired unless specified

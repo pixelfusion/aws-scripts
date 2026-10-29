@@ -37,7 +37,7 @@
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.348.0",
     "@aws-sdk/credential-providers": "^3.348.0",
-    "@types/node": "^18.14.6",
+    "@types/node": "^24",
     "aws-cdk-lib": "^2.78.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21",
