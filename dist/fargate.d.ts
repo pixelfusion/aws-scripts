@@ -29,6 +29,8 @@ export type EnvFactory = (stack: StackConfig, defaults: Record<string, string>) 
 interface FargateServiceProps extends cdk.NestedStackProps {
     subDomainIncludingDot?: string;
     healthCheckPath?: string;
+    /** Container port the task listens on (ALB target group + task port mapping). Default 80. */
+    containerPort?: number;
     /**
      * Set to "default" to run a default image instead of
      * using the provided repository

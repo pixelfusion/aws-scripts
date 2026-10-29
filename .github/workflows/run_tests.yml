@@ -44,6 +44,8 @@ jobs:
         shell: bash
   lock-diff:
     name: Lock diff
+    # package-diff posts PR comments via github.event.pull_request.comments_url (missing on push).
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

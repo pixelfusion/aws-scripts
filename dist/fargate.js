@@ -55,7 +55,7 @@ const DEFAULT_VERSION = 'default';
 class FargateService extends cdk.NestedStack {
     constructor(scope, id, props) {
         super(scope, id, props);
-        const { healthCheckPath = '/health-check', imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, loadBalancerIngress = load_balancer_ingress_1.LOAD_BALANCER_INGRESS.Open, loadBalancerCidrs, } = props;
+        const { healthCheckPath = '/health-check', containerPort = 80, imageVersion = DEFAULT_VERSION, subDomainIncludingDot = '', stack, cluster, certificate, zone, repository, taskConfiguration, loadBalancerIngress = load_balancer_ingress_1.LOAD_BALANCER_INGRESS.Open, loadBalancerCidrs, } = props;
         const allowedCidrs = (0, load_balancer_ingress_1.resolveLoadBalancerCidrs)(loadBalancerIngress, loadBalancerCidrs);
         // Compile secrets into list of mapped ecs.Secrets
         const secrets = {};
@@ -86,6 +86,7 @@ class FargateService extends cdk.NestedStack {
             desiredCount,
             taskImageOptions: {
                 image,
+                containerPort,
                 environment: taskConfiguration?.environment || {},
                 secrets,
             },

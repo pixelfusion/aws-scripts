@@ -52,6 +52,8 @@ export type EnvFactory = (
 interface FargateServiceProps extends cdk.NestedStackProps {
   subDomainIncludingDot?: string
   healthCheckPath?: string
+  /** Container port the task listens on (ALB target group + task port mapping). Default 80. */
+  containerPort?: number
   /**
    * Set to "default" to run a default image instead of
    * using the provided repository
@@ -88,6 +90,7 @@ export class FargateService extends cdk.NestedStack {
 
     const {
       healthCheckPath = '/health-check',
+      containerPort = 80,
       imageVersion = DEFAULT_VERSION,
       subDomainIncludingDot = '',
       stack,
@@ -145,6 +148,7 @@ export class FargateService extends cdk.NestedStack {
         desiredCount,
         taskImageOptions: {
           image,
+          containerPort,
           environment: taskConfiguration?.environment || {},
           secrets,
         },
