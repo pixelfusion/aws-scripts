@@ -6,6 +6,8 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import { StackConfig } from './configuration';
+import { LOAD_BALANCER_INGRESS, type LoadBalancerIngress } from './load-balancer-ingress';
+export { LOAD_BALANCER_INGRESS, type LoadBalancerIngress };
 /**
  * Represents a definition for a task that can be used to generate a task definition
  */
@@ -38,6 +40,17 @@ interface FargateServiceProps extends cdk.NestedStackProps {
     zone: route53.IHostedZone;
     repository: ecr.IRepository;
     taskConfiguration: TaskConfiguration;
+    /**
+     * Who can connect to the load balancer on ports 80 and 443.
+     * @default LOAD_BALANCER_INGRESS.Open
+     */
+    loadBalancerIngress?: LoadBalancerIngress;
+    /**
+     * CIDRs allowed to reach the load balancer. Required when
+     * `loadBalancerIngress` is `LOAD_BALANCER_INGRESS.Cidr`. Bare IPv4
+     * addresses are treated as /32 and bare IPv6 addresses as /128.
+     */
+    loadBalancerCidrs?: string[];
 }
 /**
  * Generate a fargate service that can be attached to a cluster. This service will include its own
@@ -47,4 +60,3 @@ export declare class FargateService extends cdk.NestedStack {
     readonly service: ecs_patterns.ApplicationLoadBalancedFargateService;
     constructor(scope: Construct, id: string, props: FargateServiceProps);
 }
-export {};
