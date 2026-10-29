@@ -6,16 +6,16 @@ Start by creating a fargate cluster directly with AWS, and then passing
 it to the FargateService stack to register a service with load balancer.
 
 ```typescript
-import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as ecr from "aws-cdk-lib/aws-ecr";
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
 
 const vpc = new ec2.Vpc(this, stack.getResourceID('Vpc'), {
   maxAzs: 2,
   natGateways: 1,
-});
-const cluster = new ecs.Cluster(this, stack.getResourceID("Fargate"), {
+})
+const cluster = new ecs.Cluster(this, stack.getResourceID('Fargate'), {
   vpc: vpc,
-});
+})
 ```
 
 Secondly you need to create a task definition factory for your service.
@@ -26,65 +26,83 @@ Here is an example of a factory. This loads a base task definition from either
 an env.uat.json or env.prod.json, and then decorates it.
 
 ```typescript
-import { EnvFactory, loadJsonFile } from "@pixelfusion/aws-scripts"
+import { EnvFactory, loadJsonFile } from '@pixelfusion/aws-scripts'
 
 const adminFactory: EnvFactory = (stack, defaults) => {
-    const json = loadJsonFile(__dirname, `../../admin/env.${ stack.getStageId() }.json`);
-    return {
-        ...json,
-        environment: {
-            ...json.environment,
-            AWS_BUCKET: defaults['AWS_BUCKET'],
-        }
-    };
-};
+  const json = loadJsonFile(
+    __dirname,
+    `../../admin/env.${stack.getStageId()}.json`,
+  )
+  return {
+    ...json,
+    environment: {
+      ...json.environment,
+      AWS_BUCKET: defaults['AWS_BUCKET'],
+    },
+  }
+}
 
-
-export default adminFactory;
+export default adminFactory
 ```
 
 Now you can create your service and attach it to this cluster with the
 generated task definition.
 
 ```typescript
-import { FargateService } from "@pixelfusion/aws-scripts";
+import { FargateService } from '@pixelfusion/aws-scripts'
 
 // Build environment from admin
 const adminEnvironment = adminFactory(stack, {
-    AWS_BUCKET: assetBucket.bucket.bucketName,
+  AWS_BUCKET: assetBucket.bucket.bucketName,
 })
 
 // Admin Service
 const service = new FargateService(
-    this,
-    stack.getResourceID('Admin'),
-    {
-        parameters: {
-            imageVersion: adminVersion,
-        },
+  this,
+  stack.getResourceID('Admin'),
+  {
+    parameters: {
+      imageVersion: adminVersion,
     },
-    stack,
-    cluster,
-    certificate.certificate,
-    zone,
-    repository,
-    adminEnvironment
-);
+  },
+  stack,
+  cluster,
+  certificate.certificate,
+  zone,
+  repository,
+  adminEnvironment,
+)
 ```
+
+The load balancer listens on ports 80 and 443. By default those ports are open
+to the internet. Set `loadBalancerIngress` to restrict them:
+
+```typescript
+import { LOAD_BALANCER_INGRESS } from "@pixelfusion/aws-scripts";
+
+// Only Cloudflare's published ranges (stored in aws-scripts).
+loadBalancerIngress: LOAD_BALANCER_INGRESS.Cloudflare,
+
+// Or an explicit list. Bare IPv4 addresses are treated as /32.
+loadBalancerIngress: LOAD_BALANCER_INGRESS.Cidr,
+loadBalancerCidrs: ['203.0.113.10', '198.51.100.0/24'],
+```
+
+`LOAD_BALANCER_INGRESS.Open` is the default and leaves the listeners unrestricted.
 
 Once the service is created you can access the internal AWS service via the `.service`
 property, in case you need to add any extra permissions.
 
 ```typescript
 // After creating the service add a few more permissions
-const taskDefinition = service.service.taskDefinition;
+const taskDefinition = service.service.taskDefinition
 taskDefinition.addToExecutionRolePolicy(
-    new iam.PolicyStatement({
-        actions: [ 's3:*' ],
-        resources: [
-            assetBucket.bucket.bucketArn,
-            `${ assetBucket.bucket.bucketArn }/*`,
-        ]
-    })
-);
+  new iam.PolicyStatement({
+    actions: ['s3:*'],
+    resources: [
+      assetBucket.bucket.bucketArn,
+      `${assetBucket.bucket.bucketArn}/*`,
+    ],
+  }),
+)
 ```

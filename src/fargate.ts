@@ -9,9 +9,17 @@ import * as iam from 'aws-cdk-lib/aws-iam'
 import * as acm from 'aws-cdk-lib/aws-certificatemanager'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as targets from 'aws-cdk-lib/aws-route53-targets'
-import { StackConfig } from './configuration'
-import { ARecord } from './route53'
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import { StackConfig } from './configuration'
+import {
+  LOAD_BALANCER_INGRESS,
+  resolveLoadBalancerCidrs,
+  restrictLoadBalancerIngress,
+  type LoadBalancerIngress,
+} from './load-balancer-ingress'
+import { ARecord } from './route53'
+
+export { LOAD_BALANCER_INGRESS, type LoadBalancerIngress }
 
 // Default docker image to use
 const DEFAULT_IMAGE = 'nginxdemos/hello:latest'
@@ -57,6 +65,17 @@ interface FargateServiceProps extends cdk.NestedStackProps {
   zone: route53.IHostedZone
   repository: ecr.IRepository
   taskConfiguration: TaskConfiguration
+  /**
+   * Who can connect to the load balancer on ports 80 and 443.
+   * @default LOAD_BALANCER_INGRESS.Open
+   */
+  loadBalancerIngress?: LoadBalancerIngress
+  /**
+   * CIDRs allowed to reach the load balancer. Required when
+   * `loadBalancerIngress` is `LOAD_BALANCER_INGRESS.Cidr`. Bare IPv4
+   * addresses are treated as /32 and bare IPv6 addresses as /128.
+   */
+  loadBalancerCidrs?: string[]
 }
 
 /**
@@ -80,7 +99,14 @@ export class FargateService extends cdk.NestedStack {
       zone,
       repository,
       taskConfiguration,
+      loadBalancerIngress = LOAD_BALANCER_INGRESS.Open,
+      loadBalancerCidrs,
     } = props
+
+    const allowedCidrs = resolveLoadBalancerCidrs(
+      loadBalancerIngress,
+      loadBalancerCidrs,
+    )
 
     // Compile secrets into list of mapped ecs.Secrets
     const secrets: { [key: string]: ecs.Secret } = {}
@@ -130,8 +156,22 @@ export class FargateService extends cdk.NestedStack {
           subnetType: ec2.SubnetType.PUBLIC,
           onePerAz: true,
         },
+        // Closed listeners get explicit CIDR rules below. Leave this unset for
+        // the default so the pattern keeps opening 80 and 443 to the internet.
+        openListener: allowedCidrs ? false : undefined,
       },
     )
+
+    if (allowedCidrs) {
+      // This service always terminates HTTPS and redirects HTTP.
+      restrictLoadBalancerIngress(
+        this,
+        this.service.loadBalancer,
+        cluster.vpc,
+        allowedCidrs,
+        [80, 443],
+      )
+    }
 
     // Setup AutoScaling policy
     if (taskConfiguration.autoScalingCpuTarget) {
